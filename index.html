@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aking Tindahan — Store Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Supabase client (your real database) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<!-- ZXing fallback barcode scanner (works on iPhone Safari, unlike the native API alone) -->
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+
+<style>
+  :root{
+    --paper:#FBF6EC; --ink:#241B12; --ink-soft:#5B4E3E;
+    --green:#1F6E43; --green-light:#E4F0E7;
+    --red:#C1443C; --red-light:#FBE7E5;
+    --mango:#F2A93B; --mango-light:#FDF0DC;
+    --border:#DDD1BA; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);padding-bottom:40px;}
+  .wrap{max-width:480px;margin:0 auto;padding:0 16px;}
+
+  header{padding:22px 16px 18px;text-align:center;background:linear-gradient(180deg,#1F6E43 0%,#195936 100%);color:#F6EFDD;border-bottom:4px solid var(--mango);}
+  header h1{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:26px;margin:0 0 2px;}
+  header p{margin:0;font-size:13px;opacity:0.85;}
+  #lastUpdated{margin-top:6px;font-size:11px;opacity:0.75;}
+
+  .summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;}
+  .stat .label{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-soft);font-weight:600;margin-bottom:4px;}
+  .stat .value{font-family:'Baloo 2',sans-serif;font-size:20px;font-weight:700;}
+  .stat.profit .value{color:var(--green);}
+  .stat.stockval .value{color:var(--mango);}
+
+  .section-title{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:17px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  button{font-family:'Inter',sans-serif;cursor:pointer;}
+  .btn-add{background:var(--mango);color:var(--ink);border:none;border-radius:10px;padding:8px 14px;font-weight:700;font-size:13px;}
+  .btn-scan{background:var(--green);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-weight:700;font-size:13px;}
+
+  .form-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;display:none;}
+  .form-card.open{display:block;}
+  .form-row{display:flex;gap:8px;margin-bottom:8px;}
+  .form-row input{flex:1;min-width:0;padding:9px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--paper);}
+  .form-row.single input{width:100%;}
+  .form-actions{display:flex;gap:8px;margin-top:4px;}
+  .form-actions button{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);font-weight:600;font-size:13px;}
+  .save-btn{background:var(--green);color:#fff;border:none !important;}
+  .cancel-btn{background:var(--card);color:var(--ink-soft);}
+
+  .item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+  .item-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .item-name{font-weight:700;font-size:15px;}
+  .item-prices{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .del-btn{background:none;border:none;color:var(--ink-soft);font-size:16px;padding:2px 4px;line-height:1;opacity:0.5;}
+  .del-btn:hover{opacity:1;color:var(--red);}
+  .item-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px;}
+  .stock-info{font-size:13px;}
+  .stock-count{font-weight:700;font-family:'Baloo 2',sans-serif;font-size:16px;}
+  .low{color:var(--red);}
+  .actions{display:flex;gap:6px;}
+  .action-btn{border-radius:8px;border:1px solid var(--border);padding:8px 12px;font-weight:700;font-size:13px;}
+  .sell-btn{background:var(--green-light);color:var(--green);border-color:var(--green);}
+  .restock-btn{background:var(--mango-light);color:#8A5A0E;border-color:var(--mango);}
+
+  .empty{text-align:center;padding:30px 10px;color:var(--ink-soft);font-size:14px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--card);border-radius:14px;padding:18px;width:100%;max-width:340px;}
+  .modal h3{margin:0 0 10px;font-family:'Baloo 2',sans-serif;}
+  .modal input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);font-size:16px;margin-bottom:10px;}
+
+  #scannerVideo{width:100%;border-radius:10px;background:#000;margin-bottom:10px;}
+  .scan-status{font-size:13px;color:var(--ink-soft);text-align:center;margin-bottom:10px;min-height:18px;}
+
+  .log-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:8px 2px;border-bottom:1px solid var(--border);font-size:13px;}
+  .log-row:last-child{border-bottom:none;}
+  .log-text b{font-weight:600;}
+  .log-time{color:var(--ink-soft);font-size:11px;white-space:nowrap;}
+
+  footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:24px;opacity:0.7;}
+
+  #gateOverlay{position:fixed;inset:0;background:var(--paper);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .gate-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:340px;width:100%;text-align:center;}
+  .gate-card h2{font-family:'Baloo 2',sans-serif;margin-top:0;}
+  .gate-card input{width:100%;padding:11px;border-radius:8px;border:1px solid var(--border);font-size:15px;margin-bottom:10px;}
+  .gate-card button{width:100%;padding:11px;border-radius:8px;border:none;background:var(--green);color:#fff;font-weight:700;font-size:15px;}
+</style>
+</head>
+<body>
+
+<!-- STORE CODE + NAME GATE -->
+<div id="gateOverlay">
+  <div class="gate-card">
+    <h2>Aking Tindahan</h2>
+    <p style="color:var(--ink-soft);font-size:13px;margin-top:-8px;">I-type ang store code at ang pangalan mo para magsimula.</p>
+    <input type="text" id="gateStoreCode" placeholder="Store code (e.g. HENRYSTORE)">
+    <input type="text" id="gateName" placeholder="Pangalan mo (e.g. Henry)">
+    <button id="gateEnter">Pasok</button>
+  </div>
+</div>
+
+<header>
+  <h1>Aking Tindahan</h1>
+  <p>Store tracker — kita, benta, at stock</p>
+  <p id="lastUpdated"></p>
+</header>
+
+<div class="wrap">
+
+  <div class="summary">
+    <div class="stat profit"><div class="label">Total kita (profit)</div><div class="value" id="stat-profit">₱0</div></div>
+    <div class="stat"><div class="label">Total benta (sales)</div><div class="value" id="stat-revenue">₱0</div></div>
+    <div class="stat"><div class="label">Puhunan (invested)</div><div class="value" id="stat-invested">₱0</div></div>
+    <div class="stat stockval"><div class="label">Stock value ngayon</div><div class="value" id="stat-stockvalue">₱0</div></div>
+  </div>
+
+  <div class="section-title">
+    <span>Mga paninda</span>
+    <div style="display:flex;gap:6px;">
+      <button class="btn-add" id="refreshBtn" style="background:var(--card);color:var(--ink-soft);border:1px solid var(--border);">↻</button>
+      <button class="btn-scan" id="scanBtn">📷 Scan</button>
+      <button class="btn-add" id="toggleFormBtn">+ Item</button>
+    </div>
+  </div>
+
+  <div class="form-card" id="addForm">
+    <div class="form-row single"><input type="text" id="newName" placeholder="Pangalan ng item"></div>
+    <div class="form-row single"><input type="text" id="newBarcode" placeholder="Barcode/SKU (optional)" inputmode="numeric"></div>
+    <div class="form-row">
+      <input type="number" id="newBuy" placeholder="Presyo bili" inputmode="decimal">
+      <input type="number" id="newSell" placeholder="Presyo benta" inputmode="decimal">
+    </div>
+    <div class="form-row single"><input type="number" id="newStock" placeholder="Starting stock" inputmode="numeric"></div>
+    <div class="form-actions">
+      <button class="cancel-btn" id="cancelAdd">Cancel</button>
+      <button class="save-btn" id="saveAdd">I-save</button>
+    </div>
+  </div>
+
+  <div class="form-row single" style="margin-bottom:12px;">
+    <input type="text" id="searchBox" placeholder="🔍 Hanapin ang item o barcode..." style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;background:var(--card);width:100%;">
+  </div>
+
+  <div id="itemList"></div>
+  <div class="empty" id="emptyState" style="display:none;">Wala pang item. Idagdag o i-scan ang una mong paninda.</div>
+  <div class="empty" id="noResults" style="display:none;">Walang nahanap na item.</div>
+
+  <div class="section-title">Kasaysayan</div>
+  <div id="activityList"></div>
+  <div class="empty" id="activityEmpty" style="display:none;">Wala pang aktibidad.</div>
+
+</div>
+
+<!-- SELL / RESTOCK QTY MODAL -->
+<div class="modal-overlay" id="qtyOverlay">
+  <div class="modal">
+    <h3 id="qtyTitle">Benta</h3>
+    <input type="number" id="qtyInput" value="1" min="1" inputmode="numeric">
+    <div class="form-actions">
+      <button class="cancel-btn" id="qtyCancel">Cancel</button>
+      <button class="save-btn" id="qtyConfirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- BARCODE SCANNER MODAL -->
+<div class="modal-overlay" id="scanOverlay">
+  <div class="modal">
+    <h3>I-scan ang barcode</h3>
+    <video id="scannerVideo" autoplay muted playsinline></video>
+    <div class="scan-status" id="scanStatus">Ihanda ang camera...</div>
+    <div class="form-actions">
+      <button class="cancel-btn" id="scanCancel">Isara</button>
+    </div>
+  </div>
+</div>
+
+<footer>Shared na ang datos — kayong dalawa ni misis ang pwedeng mag-update.</footer>
+
+<script>
+/* ============================================================
+   1. CONFIG — paste your own Supabase project details here
+   ============================================================ */
+const SUPABASE_URL = "https://kikqcrfakutkxfrocykm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa3FjcmZha3V0a3hmcm9jeWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTY1MTMsImV4cCI6MjA5OTI5MjUxM30.t_-LcCp_niK6VL7f6sE61p54_TfyIEKOaSJBSFSv8jo";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ============================================================
+   2. STATE
+   ============================================================ */
+let items = [];
+let activityLog = [];
+let totals = { revenue: 0, profit: 0, invested: 0 };
+let storeCode = localStorage.getItem('tindahan-store-code') || null;
+let myName = localStorage.getItem('tindahan-my-name') || null;
+let qtyMode = null, qtyItemId = null;
+
+const peso = n => '₱' + Math.round(n).toLocaleString('en-PH');
+function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+function formatTimeAgo(iso){
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs/60000);
+  if(mins < 1) return 'ngayon lang';
+  if(mins < 60) return mins + ' min ago';
+  const hrs = Math.floor(mins/60);
+  if(hrs < 24) return hrs + ' hr ago';
+  return Math.floor(hrs/24) + ' araw ago';
+}
+
+/* ============================================================
+   3. GATE — store code + name
+   ============================================================ */
+function checkGate(){
+  if(storeCode && myName){
+    document.getElementById('gateOverlay').style.display = 'none';
+    initApp();
+  } else {
+    document.getElementById('gateOverlay').style.display = 'flex';
+  }
+}
+document.getElementById('gateEnter').addEventListener('click', ()=>{
+  const code = document.getElementById('gateStoreCode').value.trim().toUpperCase();
+  const name = document.getElementById('gateName').value.trim();
+  if(!code || !name){ alert('Kumpletuhin ang store code at pangalan.'); return; }
+  storeCode = code; myName = name;
+  localStorage.setItem('tindahan-store-code', code);
+  localStorage.setItem('tindahan-my-name', name);
+  checkGate();
+});
+
+/* ============================================================
+   4. DATA LOADING
+   ============================================================ */
+async function loadItems(){
+  const { data, error } = await sb.from('items').select('*').eq('store_code', storeCode).order('created_at');
+  if(error){ console.error(error); return; }
+  items = data;
+}
+
+async function loadLog(){
+  const { data, error } = await sb.from('activity_log').select('*').eq('store_code', storeCode).order('created_at', { ascending:false }).limit(15);
+  if(error){ console.error(error); return; }
+  activityLog = data;
+}
+
+async function loadTotals(){
+  const { data, error } = await sb.from('activity_log').select('revenue,profit,invested').eq('store_code', storeCode);
+  if(error){ console.error(error); return; }
+  totals = data.reduce((acc,row)=>({
+    revenue: acc.revenue + Number(row.revenue||0),
+    profit: acc.profit + Number(row.profit||0),
+    invested: acc.invested + Number(row.invested||0)
+  }), { revenue:0, profit:0, invested:0 });
+}
+
+async function refreshAll(){
+  await Promise.all([loadItems(), loadLog(), loadTotals()]);
+  render();
+}
+
+async function logActivity(action, itemName, qty, revenue=0, profit=0, invested=0){
+  await sb.from('activity_log').insert({
+    store_code: storeCode, who: myName, action, item_name: itemName,
+    qty, revenue, profit, invested
+  });
+}
+
+/* ============================================================
+   5. RENDER
+   ============================================================ */
+function render(){
+  const lu = document.getElementById('lastUpdated');
+  if(activityLog.length > 0){
+    lu.textContent = `Huling update: ${activityLog[0].who} · ${formatTimeAgo(activityLog[0].created_at)}`;
+  } else {
+    lu.textContent = '';
+  }
+
+  document.getElementById('stat-profit').textContent = peso(totals.profit);
+  document.getElementById('stat-revenue').textContent = peso(totals.revenue);
+  document.getElementById('stat-invested').textContent = peso(totals.invested);
+  const stockValue = items.reduce((sum,it)=> sum + it.buy_price*it.stock, 0);
+  document.getElementById('stat-stockvalue').textContent = peso(stockValue);
+
+  const list = document.getElementById('itemList');
+  const empty = document.getElementById('emptyState');
+  const noResults = document.getElementById('noResults');
+  list.innerHTML = '';
+
+  if(items.length === 0){
+    empty.style.display = 'block'; noResults.style.display = 'none';
+  } else {
+    empty.style.display = 'none';
+    const query = (document.getElementById('searchBox').value || '').trim().toLowerCase();
+    const filtered = query
+      ? items.filter(it => it.name.toLowerCase().includes(query) || (it.barcode && it.barcode.toLowerCase().includes(query)))
+      : items;
+
+    if(filtered.length === 0){
+      noResults.style.display = 'block';
+    } else {
+      noResults.style.display = 'none';
+      filtered.forEach(it=>{
+        const div = document.createElement('div');
+        div.className = 'item';
+        const lowStock = it.stock <= 3;
+        div.innerHTML = `
+          <div class="item-top">
+            <div>
+              <div class="item-name">${escapeHtml(it.name)}</div>
+              <div class="item-prices">Bili ${peso(it.buy_price)} · Benta ${peso(it.sell_price)} · Tubo ${peso(it.sell_price-it.buy_price)}/pc${it.barcode ? ' · #' + escapeHtml(it.barcode) : ''}</div>
+            </div>
+            <button class="del-btn" data-id="${it.id}">✕</button>
+          </div>
+          <div class="item-bottom">
+            <div class="stock-info">Stock: <span class="stock-count ${lowStock?'low':''}">${it.stock}</span>${lowStock ? ' (mababa na!)' : ''}</div>
+            <div class="actions">
+              <button class="action-btn sell-btn" data-id="${it.id}" data-mode="sell">− Benta</button>
+              <button class="action-btn restock-btn" data-id="${it.id}" data-mode="restock">+ Restock</button>
+            </div>
+          </div>`;
+        list.appendChild(div);
+      });
+      list.querySelectorAll('.del-btn').forEach(btn=> btn.addEventListener('click', ()=> deleteItem(btn.dataset.id)));
+      list.querySelectorAll('.action-btn').forEach(btn=> btn.addEventListener('click', ()=> openQtyModal(btn.dataset.id, btn.dataset.mode)));
+    }
+  }
+
+  const activityListEl = document.getElementById('activityList');
+  const activityEmpty = document.getElementById('activityEmpty');
+  activityListEl.innerHTML = '';
+  if(activityLog.length === 0){
+    activityEmpty.style.display = 'block';
+  } else {
+    activityEmpty.style.display = 'none';
+    activityLog.forEach(entry=>{
+      const label = entry.action === 'sell' ? `Nagbenta ng ${entry.qty}x ${entry.item_name}`
+        : entry.action === 'restock' ? `Nag-restock ng ${entry.qty}x ${entry.item_name}`
+        : entry.action === 'add' ? `Idinagdag: ${entry.item_name} (${entry.qty}x)`
+        : `Tinanggal: ${entry.item_name}`;
+      const row = document.createElement('div');
+      row.className = 'log-row';
+      row.innerHTML = `<span class="log-text"><b>${escapeHtml(entry.who||'')}</b> — ${escapeHtml(label)}</span><span class="log-time">${formatTimeAgo(entry.created_at)}</span>`;
+      activityListEl.appendChild(row);
+    });
+  }
+}
+
+/* ============================================================
+   6. ACTIONS
+   ============================================================ */
+async function deleteItem(id){
+  const target = items.find(i=>i.id === id);
+  await sb.from('items').delete().eq('id', id);
+  if(target) await logActivity('delete', target.name, 0);
+  await refreshAll();
+}
+
+function openQtyModal(id, mode){
+  qtyItemId = id; qtyMode = mode;
+  document.getElementById('qtyTitle').textContent = mode === 'sell' ? 'Ilang piraso ang nabenta?' : 'Ilang piraso ang idadagdag?';
+  document.getElementById('qtyInput').value = 1;
+  document.getElementById('qtyOverlay').classList.add('open');
+}
+function closeQtyModal(){ document.getElementById('qtyOverlay').classList.remove('open'); qtyItemId=null; qtyMode=null; }
+document.getElementById('qtyCancel').addEventListener('click', closeQtyModal);
+document.getElementById('qtyOverlay').addEventListener('click', e=>{ if(e.target.id==='qtyOverlay') closeQtyModal(); });
+
+document.getElementById('qtyConfirm').addEventListener('click', async ()=>{
+  const qty = parseInt(document.getElementById('qtyInput').value);
+  if(!qty || qty <= 0) return;
+  const item = items.find(i=>i.id === qtyItemId);
+  if(!item) return;
+
+  if(qtyMode === 'sell'){
+    const sellQty = Math.min(qty, item.stock);
+    const newStock = item.stock - sellQty;
+    await sb.from('items').update({ stock: newStock }).eq('id', item.id);
+    await logActivity('sell', item.name, sellQty, sellQty*item.sell_price, sellQty*(item.sell_price-item.buy_price), 0);
+  } else {
+    const newStock = item.stock + qty;
+    await sb.from('items').update({ stock: newStock }).eq('id', item.id);
+    await logActivity('restock', item.name, qty, 0, 0, qty*item.buy_price);
+  }
+  closeQtyModal();
+  await refreshAll();
+});
+
+document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+document.getElementById('toggleFormBtn').addEventListener('click', ()=> document.getElementById('addForm').classList.toggle('open'));
+document.getElementById('cancelAdd').addEventListener('click', ()=>{ document.getElementById('addForm').classList.remove('open'); clearForm(); });
+document.getElementById('searchBox').addEventListener('input', render);
+
+function clearForm(){
+  document.getElementById('newName').value = '';
+  document.getElementById('newBarcode').value = '';
+  document.getElementById('newBuy').value = '';
+  document.getElementById('newSell').value = '';
+  document.getElementById('newStock').value = '';
+}
+
+document.getElementById('saveAdd').addEventListener('click', async ()=>{
+  const name = document.getElementById('newName').value.trim();
+  const barcode = document.getElementById('newBarcode').value.trim();
+  const buy = parseFloat(document.getElementById('newBuy').value);
+  const sell = parseFloat(document.getElementById('newSell').value);
+  const stock = parseInt(document.getElementById('newStock').value) || 0;
+
+  if(!name || isNaN(buy) || isNaN(sell)){ alert('Kumpletuhin ang pangalan, presyo bili, at presyo benta.'); return; }
+
+  await sb.from('items').insert({ store_code: storeCode, name, barcode, buy_price: buy, sell_price: sell, stock });
+  await logActivity('add', name, stock, 0, 0, stock*buy);
+
+  clearForm();
+  document.getElementById('addForm').classList.remove('open');
+  await refreshAll();
+});
+
+/* ============================================================
+   7. BARCODE SCANNER — native BarcodeDetector first, ZXing fallback
+   ============================================================ */
+let mediaStream = null;
+let zxingReader = null;
+let scanLoopId = null;
+
+document.getElementById('scanBtn').addEventListener('click', openScanner);
+document.getElementById('scanCancel').addEventListener('click', closeScanner);
+
+async function openScanner(){
+  document.getElementById('scanOverlay').classList.add('open');
+  document.getElementById('scanStatus').textContent = 'Ihanda ang camera...';
+  const video = document.getElementById('scannerVideo');
+
+  try{
+    mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = mediaStream;
+    await video.play();
+  }catch(e){
+    document.getElementById('scanStatus').textContent = 'Hindi ma-access ang camera. I-check ang permission.';
+    return;
+  }
+
+  if('BarcodeDetector' in window){
+    document.getElementById('scanStatus').textContent = 'Ituon ang camera sa barcode...';
+    const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128'] });
+    const loop = async ()=>{
+      try{
+        const codes = await detector.detect(video);
+        if(codes.length > 0){ onBarcodeDetected(codes[0].rawValue); return; }
+      }catch(e){}
+      scanLoopId = requestAnimationFrame(loop);
+    };
+    loop();
+  } else {
+    document.getElementById('scanStatus').textContent = 'Ituon ang camera sa barcode... (fallback mode)';
+    zxingReader = new ZXing.BrowserMultiFormatReader();
+    zxingReader.decodeFromVideoElement(video, (result, err)=>{
+      if(result){ onBarcodeDetected(result.getText()); }
+    });
+  }
+}
+
+function closeScanner(){
+  document.getElementById('scanOverlay').classList.remove('open');
+  if(scanLoopId) cancelAnimationFrame(scanLoopId);
+  if(zxingReader){ zxingReader.reset(); zxingReader = null; }
+  if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream = null; }
+}
+
+async function onBarcodeDetected(code){
+  closeScanner();
+  document.getElementById('newBarcode').value = code;
+  document.getElementById('addForm').classList.add('open');
+
+  // Try to auto-fill the product name from Open Food Facts
+  try{
+    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
+    const data = await res.json();
+    if(data.status === 1 && data.product){
+      const productName = data.product.product_name || data.product.product_name_en || '';
+      if(productName) document.getElementById('newName').value = productName;
+    }
+  }catch(e){ /* offline or not found — that's fine, they can type the name manually */ }
+
+  document.getElementById('newName').focus();
+}
+
+/* ============================================================
+   8. INIT
+   ============================================================ */
+function initApp(){
+  refreshAll();
+}
+checkGate();
+</script>
+
+</body>
+</html>
