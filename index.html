@@ -359,7 +359,10 @@ function render(){
 async function deleteItem(id){
   const target = items.find(i=>i.id === id);
   await sb.from('items').delete().eq('id', id);
-  if(target) await logActivity('delete', target.name, 0);
+  if(target){
+    const remainingValue = target.buy_price * target.stock;
+    await logActivity('delete', target.name, target.stock, 0, 0, -remainingValue);
+  }
   await refreshAll();
 }
 
