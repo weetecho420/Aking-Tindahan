@@ -251,7 +251,7 @@ async function loadLog(){
 }
 
 async function loadTotals(){
-  const { data, error } = await sb.from('activity_log').select('revenue,profit,invested').eq('store_code', storeCode);
+  const { data, error } = await sb.from('activity_log').select('revenue,profit,invested').eq('store_code', storeCode).limit(100000);
   if(error){ console.error(error); return; }
   totals = data.reduce((acc,row)=>({
     revenue: acc.revenue + Number(row.revenue||0),
