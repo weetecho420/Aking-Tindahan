@@ -253,8 +253,7 @@ async function loadLog(){
 async function loadTotals(){
   const { data, error } = await sb.from('activity_log').select('revenue,profit,invested').eq('store_code', storeCode).limit(100000);
   if(error){ console.error(error); return; }
-  window.debugCount = data.length;
-  totals = data.reduce((acc,row)=>({
+    totals = data.reduce((acc,row)=>({
     revenue: acc.revenue + Number(row.revenue||0),
     profit: acc.profit + Number(row.profit||0),
     invested: acc.invested + Number(row.invested||0)
@@ -279,7 +278,7 @@ async function logActivity(action, itemName, qty, revenue=0, profit=0, invested=
 function render(){
   const lu = document.getElementById('lastUpdated');
   if(activityLog.length > 0){
-    lu.textContent = `Huling update: ${activityLog[0].who} · ${formatTimeAgo(activityLog[0].created_at)} [DEBUG: ${window.debugCount || 0} rows]`;
+    lu.textContent = `Huling update: ${activityLog[0].who} · ${formatTimeAgo(activityLog[0].created_at)}`;
   } else {
     lu.textContent = '';
   }
