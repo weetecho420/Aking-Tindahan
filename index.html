@@ -517,6 +517,7 @@ function render(){
       const label = entry.action === 'sell' ? `Nagbenta ng ${entry.qty}x ${entry.item_name}`
         : entry.action === 'restock' ? `Nag-restock ng ${entry.qty}x ${entry.item_name}`
         : entry.action === 'add' ? `Idinagdag: ${entry.item_name} (${entry.qty}x)`
+        : entry.action === 'adjust' ? `Inayos: ${entry.item_name}`
         : `Tinanggal: ${entry.item_name}`;
       const row = document.createElement('div');
       row.className = 'log-row';
@@ -550,23 +551,25 @@ document.getElementById('qtyCancel').addEventListener('click', closeQtyModal);
 document.getElementById('qtyOverlay').addEventListener('click', e=>{ if(e.target.id==='qtyOverlay') closeQtyModal(); });
 
 document.getElementById('qtyConfirm').addEventListener('click', async ()=>{
+  const btn = document.getElementById('qtyConfirm');
+  if(btn.disabled) return;               // ignore double-taps
   const qty = parseInt(document.getElementById('qtyInput').value);
   if(!qty || qty <= 0) return;
   const item = items.find(i=>i.id === qtyItemId);
   if(!item) return;
 
-  if(qtyMode === 'sell'){
-    const sellQty = Math.min(qty, item.stock);
-    const newStock = item.stock - sellQty;
-    await sb.from('items').update({ stock: newStock }).eq('id', item.id);
-    await logActivity('sell', item.name, sellQty, sellQty*item.sell_price, sellQty*(item.sell_price-item.buy_price), 0);
-  } else {
-    const newStock = item.stock + qty;
-    await sb.from('items').update({ stock: newStock }).eq('id', item.id);
-    await logActivity('restock', item.name, qty, 0, 0, qty*item.buy_price);
+  btn.disabled = true;
+  try{
+    // Stock + history saved together in the database, in one safe step
+    const { error } = await sb.rpc('record_stock_change', {
+      p_item_id: item.id, p_mode: qtyMode, p_qty: qty, p_who: myName
+    });
+    if(error){ console.error(error); alert('Hindi na-save: ' + error.message); return; }
+    closeQtyModal();
+    await refreshAll();
+  } finally {
+    btn.disabled = false;
   }
-  closeQtyModal();
-  await refreshAll();
 });
 
 document.getElementById('refreshBtn').addEventListener('click', refreshAll);
@@ -591,8 +594,16 @@ document.getElementById('saveAdd').addEventListener('click', async ()=>{
 
   if(!name || isNaN(buy) || isNaN(sell)){ alert('Kumpletuhin ang pangalan, presyo bili, at presyo benta.'); return; }
 
-  await sb.from('items').insert({ store_code: storeCode, name, barcode, buy_price: buy, sell_price: sell, stock });
-  await logActivity('add', name, stock, 0, 0, stock*buy);
+  const saveBtn = document.getElementById('saveAdd');
+  if(saveBtn.disabled) return;
+  saveBtn.disabled = true;
+  try{
+    const { error } = await sb.from('items').insert({ store_code: storeCode, name, barcode, buy_price: buy, sell_price: sell, stock });
+    if(error){ console.error(error); alert('Hindi na-save: ' + error.message); return; }
+    await logActivity('add', name, stock, 0, 0, stock*buy);
+  } finally {
+    saveBtn.disabled = false;
+  }
 
   clearForm();
   document.getElementById('addForm').classList.remove('open');
