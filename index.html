@@ -90,6 +90,43 @@
   .gate-card h2{font-family:'Baloo 2',sans-serif;margin-top:0;}
   .gate-card input{width:100%;padding:11px;border-radius:8px;border:1px solid var(--border);font-size:15px;margin-bottom:10px;}
   .gate-card button{width:100%;padding:11px;border-radius:8px;border:none;background:var(--green);color:#fff;font-weight:700;font-size:15px;}
+  .gate-card button:disabled{opacity:0.6;}
+  .gate-error{color:var(--red);font-size:13px;min-height:18px;margin:-2px 0 8px;}
+
+  /* ---------- TABS ---------- */
+  .tabs{display:flex;gap:4px;margin:16px 0 0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;}
+  .tab{flex:1;border:none;background:none;padding:10px;border-radius:9px;font-weight:700;font-size:14px;color:var(--ink-soft);}
+  .tab.active{background:var(--green);color:#fff;}
+
+  /* ---------- UTANG ---------- */
+  .stat.utang .value{color:var(--red);}
+  .cust{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;width:100%;text-align:left;font-size:inherit;color:inherit;}
+  .cust-bal{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:18px;white-space:nowrap;}
+  .cust-bal.owes{color:var(--red);}
+  .cust-bal.clear{color:var(--green);}
+  .over-limit{display:inline-block;background:var(--red-light);color:var(--red);font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:4px;}
+
+  .cust-modal{max-width:420px;max-height:90vh;overflow-y:auto;}
+  .cust-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .cust-head h3{margin:0;}
+  .balance-box{background:var(--paper);border:1px solid var(--border);border-radius:12px;padding:12px;margin:12px 0;text-align:center;}
+  .balance-box .label{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-soft);font-weight:600;}
+  .balance-box .value{font-family:'Baloo 2',sans-serif;font-size:30px;font-weight:800;}
+  .cust-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+  .cust-actions .action-btn{padding:11px 6px;}
+  .utang-btn{background:var(--red-light);color:var(--red);border-color:var(--red);}
+
+  .entry{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:9px 2px;border-bottom:1px solid var(--border);font-size:13px;}
+  .entry:last-child{border-bottom:none;}
+  .entry.reversed{opacity:0.45;}
+  .entry.reversed .entry-amt{text-decoration:line-through;}
+  .entry-amt{font-weight:700;white-space:nowrap;}
+  .entry-amt.charge{color:var(--red);}
+  .entry-amt.payment{color:var(--green);}
+  .entry-sub{color:var(--ink-soft);font-size:11px;margin-top:2px;}
+  .undo-btn{background:none;border:1px solid var(--border);border-radius:6px;font-size:11px;padding:2px 6px;color:var(--ink-soft);margin-top:4px;}
+  #amtOverlay{z-index:60;}
+  .logout-link{background:none;border:none;color:var(--ink-soft);text-decoration:underline;font-size:11px;margin-top:6px;}
 </style>
 </head>
 <body>
@@ -98,9 +135,11 @@
 <div id="gateOverlay">
   <div class="gate-card">
     <h2>XERA SUNNYDAY</h2>
-    <p style="color:var(--ink-soft);font-size:13px;margin-top:-8px;">I-type ang store code at ang pangalan mo para magsimula.</p>
-    <input type="text" id="gateStoreCode" placeholder="Store code (e.g. XERA SUNNYDAY)">
+    <p style="color:var(--ink-soft);font-size:13px;margin-top:-8px;">I-type ang store code, PIN, at ang pangalan mo para magsimula.</p>
+    <input type="text" id="gateStoreCode" placeholder="Store code" autocapitalize="characters">
+    <input type="password" id="gatePin" placeholder="PIN" inputmode="numeric" autocomplete="off">
     <input type="text" id="gateName" placeholder="Pangalan mo (e.g. Henry)">
+    <div class="gate-error" id="gateError"></div>
     <button id="gateEnter">Pasok</button>
   </div>
 </div>
@@ -112,6 +151,13 @@
 </header>
 
 <div class="wrap">
+
+  <div class="tabs">
+    <button class="tab active" data-view="paninda">📦 Paninda</button>
+    <button class="tab" data-view="utang">📒 Utang</button>
+  </div>
+
+  <div id="viewPaninda">
 
   <div class="summary">
     <div class="stat profit"><div class="label">Total kita (profit)</div><div class="value" id="stat-profit">₱0</div></div>
@@ -155,6 +201,44 @@
   <div id="activityList"></div>
   <div class="empty" id="activityEmpty" style="display:none;">Wala pang aktibidad.</div>
 
+  </div><!-- /viewPaninda -->
+
+  <!-- ==================== UTANG VIEW ==================== -->
+  <div id="viewUtang" style="display:none;">
+
+    <div class="summary">
+      <div class="stat utang"><div class="label">Total na utang</div><div class="value" id="stat-utang">₱0</div></div>
+      <div class="stat"><div class="label">May utang</div><div class="value" id="stat-utang-count">0</div></div>
+    </div>
+
+    <div class="section-title">
+      <span>Mga customer</span>
+      <div style="display:flex;gap:6px;">
+        <button class="btn-add" id="utangRefreshBtn" style="background:var(--card);color:var(--ink-soft);border:1px solid var(--border);">↻</button>
+        <button class="btn-add" id="toggleCustFormBtn">+ Customer</button>
+      </div>
+    </div>
+
+    <div class="form-card" id="custForm">
+      <div class="form-row single"><input type="text" id="custNewName" placeholder="Pangalan ng customer"></div>
+      <div class="form-row single"><input type="tel" id="custNewPhone" placeholder="Cellphone number (optional)" inputmode="tel"></div>
+      <div class="form-row single"><input type="number" id="custNewLimit" placeholder="Credit limit ₱ (optional)" inputmode="decimal"></div>
+      <div class="form-row single"><input type="text" id="custNewNotes" placeholder="Note (e.g. kapitbahay sa Purok 3)"></div>
+      <div class="form-actions">
+        <button class="cancel-btn" id="custCancelAdd">Cancel</button>
+        <button class="save-btn" id="custSaveAdd">I-save</button>
+      </div>
+    </div>
+
+    <div class="form-row single" style="margin-bottom:12px;">
+      <input type="text" id="custSearch" placeholder="🔍 Hanapin ang customer..." style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;background:var(--card);width:100%;">
+    </div>
+
+    <div id="custList"></div>
+    <div class="empty" id="custEmpty" style="display:none;">Wala pang customer. Pindutin ang "+ Customer" para magsimula.</div>
+    <div class="empty" id="custNoResults" style="display:none;">Walang nahanap na customer.</div>
+  </div><!-- /viewUtang -->
+
 </div>
 
 <!-- SELL / RESTOCK QTY MODAL -->
@@ -181,7 +265,46 @@
   </div>
 </div>
 
-<footer>Shared na ang datos — kayong dalawa ni misis ang pwedeng mag-update.</footer>
+<!-- CUSTOMER DETAIL MODAL -->
+<div class="modal-overlay" id="custOverlay">
+  <div class="modal cust-modal">
+    <div class="cust-head">
+      <div>
+        <h3 id="custName"></h3>
+        <div class="item-prices" id="custPhone"></div>
+      </div>
+      <button class="del-btn" id="custClose" style="opacity:0.8;font-size:20px;">✕</button>
+    </div>
+    <div class="balance-box">
+      <div class="label">Utang ngayon</div>
+      <div class="value" id="custBalance">₱0</div>
+      <div class="item-prices" id="custLimit"></div>
+    </div>
+    <div class="cust-actions">
+      <button class="action-btn utang-btn" id="btnAddUtang">+ Utang</button>
+      <button class="action-btn sell-btn" id="btnBayad">Bayad</button>
+      <button class="action-btn restock-btn" id="btnPaalala">📩 Paalala</button>
+    </div>
+    <div class="section-title" style="font-size:15px;margin-top:16px;">Kasaysayan</div>
+    <div id="custHistory"></div>
+  </div>
+</div>
+
+<!-- UTANG / BAYAD AMOUNT MODAL -->
+<div class="modal-overlay" id="amtOverlay">
+  <div class="modal">
+    <h3 id="amtTitle">Utang</h3>
+    <input type="number" id="amtInput" placeholder="Halaga (₱)" inputmode="decimal" min="0" step="0.01">
+    <input type="text" id="amtNote" placeholder="Note (optional, e.g. 2 Coke, 1kg bigas)">
+    <div class="item-prices" id="amtHint" style="margin:-4px 0 10px;"></div>
+    <div class="form-actions">
+      <button class="cancel-btn" id="amtCancel">Cancel</button>
+      <button class="save-btn" id="amtConfirm">I-save</button>
+    </div>
+  </div>
+</div>
+
+<footer>Shared na ang datos — kayong dalawa ni misis ang pwedeng mag-update.<br><button class="logout-link" id="logoutBtn">Mag-logout</button></footer>
 
 <script>
 /* ============================================================
@@ -215,24 +338,74 @@ function formatTimeAgo(iso){
 }
 
 /* ============================================================
-   3. GATE — store code + name
+   3. GATE — store code + PIN + name
+   Behind the scenes: an anonymous Supabase login, then the PIN
+   is checked by the database (claim_store_access). The PIN is
+   never saved on the phone — only the login session is.
    ============================================================ */
-function checkGate(){
-  if(storeCode && myName){
-    document.getElementById('gateOverlay').style.display = 'none';
-    initApp();
-  } else {
-    document.getElementById('gateOverlay').style.display = 'flex';
-  }
+function showGate(message){
+  document.getElementById('gateOverlay').style.display = 'flex';
+  if(storeCode) document.getElementById('gateStoreCode').value = storeCode;
+  if(myName) document.getElementById('gateName').value = myName;
+  document.getElementById('gateError').textContent = message || '';
 }
-document.getElementById('gateEnter').addEventListener('click', ()=>{
-  const code = document.getElementById('gateStoreCode').value.trim().toUpperCase();
+
+async function ensureSession(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session) return true;
+  const { error } = await sb.auth.signInAnonymously();
+  if(error){
+    console.error(error);
+    showGate('Hindi maka-login: ' + error.message);
+    return false;
+  }
+  return true;
+}
+
+async function checkGate(){
+  if(storeCode && myName && await ensureSession()){
+    const { data, error } = await sb.rpc('is_store_member', { p_store_code: storeCode });
+    if(!error && data === true){
+      document.getElementById('gateOverlay').style.display = 'none';
+      initApp();
+      return;
+    }
+  }
+  showGate();
+}
+
+document.getElementById('gateEnter').addEventListener('click', async ()=>{
+  const btn = document.getElementById('gateEnter');
+  const code = document.getElementById('gateStoreCode').value.replace(/\s+/g,'').toUpperCase();
+  const pin = document.getElementById('gatePin').value.trim();
   const name = document.getElementById('gateName').value.trim();
-  if(!code || !name){ alert('Kumpletuhin ang store code at pangalan.'); return; }
-  storeCode = code; myName = name;
-  localStorage.setItem('tindahan-store-code', code);
-  localStorage.setItem('tindahan-my-name', name);
-  checkGate();
+  if(!code || !pin || !name){ showGate('Kumpletuhin ang store code, PIN, at pangalan.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Sandali...';
+  try{
+    if(!(await ensureSession())) return;
+    const { data, error } = await sb.rpc('claim_store_access', { p_store_code: code, p_pin: pin });
+    if(error || data !== true){
+      if(error) console.error(error);
+      showGate('Mali ang store code o PIN.');
+      return;
+    }
+    storeCode = code; myName = name;
+    localStorage.setItem('tindahan-store-code', code);
+    localStorage.setItem('tindahan-my-name', name);
+    document.getElementById('gatePin').value = '';
+    await checkGate();
+  } finally {
+    btn.disabled = false; btn.textContent = 'Pasok';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  if(!confirm('Mag-logout? Kailangan mo ulit ang PIN para makapasok.')) return;
+  await sb.auth.signOut();
+  localStorage.removeItem('tindahan-store-code');
+  storeCode = null;
+  showGate();
 });
 
 /* ============================================================
@@ -496,10 +669,270 @@ async function onBarcodeDetected(code){
 }
 
 /* ============================================================
-   8. INIT
+   8. UTANG LEDGER — customers, utang, bayad, paalala
+   Every utang/bayad is a NEW row (never edited or deleted).
+   Mistakes are fixed with an "undo" (reversal) row.
+   The balance is calculated by the database view customer_balances.
+   ============================================================ */
+const STORE_DISPLAY_NAME = 'XERA SUNNYDAY';
+let customers = [];
+let currentCustomerId = null;
+let currentEntries = [];
+let amtMode = null; // 'charge' or 'payment'
+
+const pesoExact = n => '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+function formatDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-PH', { month:'short', day:'numeric' }) + ', ' +
+         d.toLocaleTimeString('en-PH', { hour:'numeric', minute:'2-digit' });
+}
+function cleanPhone(p){ return (p || '').replace(/[^\d+]/g, ''); }
+
+// --- tabs ---
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t === tab));
+    const view = tab.dataset.view;
+    document.getElementById('viewPaninda').style.display = view === 'paninda' ? 'block' : 'none';
+    document.getElementById('viewUtang').style.display = view === 'utang' ? 'block' : 'none';
+    if(view === 'utang') loadCustomers().then(renderCustomers);
+  });
+});
+
+// --- load + render customer list ---
+async function loadCustomers(){
+  const { data, error } = await sb.from('customer_balances').select('*')
+    .eq('store_code', storeCode).order('balance', { ascending:false }).order('name');
+  if(error){ console.error(error); return; }
+  customers = data;
+}
+
+function renderCustomers(){
+  const owing = customers.filter(c => Number(c.balance) > 0);
+  document.getElementById('stat-utang').textContent = pesoExact(owing.reduce((s,c)=> s + Number(c.balance), 0));
+  document.getElementById('stat-utang-count').textContent = owing.length;
+
+  const list = document.getElementById('custList');
+  const empty = document.getElementById('custEmpty');
+  const noResults = document.getElementById('custNoResults');
+  list.innerHTML = '';
+
+  if(customers.length === 0){ empty.style.display = 'block'; noResults.style.display = 'none'; return; }
+  empty.style.display = 'none';
+
+  const q = (document.getElementById('custSearch').value || '').trim().toLowerCase();
+  const filtered = q ? customers.filter(c => c.name.toLowerCase().includes(q) || (c.phone || '').includes(q)) : customers;
+  noResults.style.display = filtered.length === 0 ? 'block' : 'none';
+
+  filtered.forEach(c=>{
+    const bal = Number(c.balance);
+    const over = c.credit_limit != null && bal > Number(c.credit_limit);
+    const lastPay = c.last_payment_at ? `Huling bayad: ${formatTimeAgo(c.last_payment_at)}` : (bal > 0 ? 'Wala pang bayad' : '');
+    const btn = document.createElement('button');
+    btn.className = 'cust';
+    btn.innerHTML = `
+      <div>
+        <div class="item-name">${escapeHtml(c.name)}${over ? '<span class="over-limit">Lampas limit</span>' : ''}</div>
+        <div class="item-prices">${escapeHtml(lastPay)}</div>
+      </div>
+      <div class="cust-bal ${bal > 0 ? 'owes' : 'clear'}">${bal > 0 ? pesoExact(bal) : 'Bayad na ✓'}</div>`;
+    btn.addEventListener('click', ()=> openCustomer(c.customer_id));
+    list.appendChild(btn);
+  });
+}
+
+document.getElementById('custSearch').addEventListener('input', renderCustomers);
+document.getElementById('utangRefreshBtn').addEventListener('click', ()=> loadCustomers().then(renderCustomers));
+
+// --- add customer ---
+function clearCustForm(){
+  ['custNewName','custNewPhone','custNewLimit','custNewNotes'].forEach(id=> document.getElementById(id).value = '');
+}
+document.getElementById('toggleCustFormBtn').addEventListener('click', ()=> document.getElementById('custForm').classList.toggle('open'));
+document.getElementById('custCancelAdd').addEventListener('click', ()=>{ document.getElementById('custForm').classList.remove('open'); clearCustForm(); });
+
+document.getElementById('custSaveAdd').addEventListener('click', async ()=>{
+  const btn = document.getElementById('custSaveAdd');
+  const name = document.getElementById('custNewName').value.trim();
+  const phone = cleanPhone(document.getElementById('custNewPhone').value);
+  const limitRaw = document.getElementById('custNewLimit').value;
+  const notes = document.getElementById('custNewNotes').value.trim();
+  if(!name){ alert('Ilagay ang pangalan ng customer.'); return; }
+  const credit_limit = limitRaw === '' ? null : Math.round(parseFloat(limitRaw) * 100) / 100;
+
+  btn.disabled = true;
+  const { error } = await sb.from('customers').insert({
+    store_code: storeCode, name, phone: phone || null, notes: notes || null, credit_limit
+  });
+  btn.disabled = false;
+  if(error){ console.error(error); alert('Hindi na-save: ' + error.message); return; }
+
+  clearCustForm();
+  document.getElementById('custForm').classList.remove('open');
+  await loadCustomers(); renderCustomers();
+});
+
+// --- customer detail ---
+async function openCustomer(id){
+  currentCustomerId = id;
+  document.getElementById('custOverlay').classList.add('open');
+  await refreshCustomerDetail();
+}
+function closeCustomer(){
+  document.getElementById('custOverlay').classList.remove('open');
+  currentCustomerId = null; currentEntries = [];
+}
+document.getElementById('custClose').addEventListener('click', closeCustomer);
+document.getElementById('custOverlay').addEventListener('click', e=>{ if(e.target.id === 'custOverlay') closeCustomer(); });
+
+function currentCustomer(){ return customers.find(c => c.customer_id === currentCustomerId); }
+
+async function refreshCustomerDetail(){
+  const [, entriesRes] = await Promise.all([
+    loadCustomers(),
+    sb.from('utang_entries').select('*').eq('customer_id', currentCustomerId)
+      .order('created_at', { ascending:false }).limit(100)
+  ]);
+  if(entriesRes.error){ console.error(entriesRes.error); }
+  currentEntries = entriesRes.data || [];
+  renderCustomers();
+  renderCustomerDetail();
+}
+
+function renderCustomerDetail(){
+  const c = currentCustomer();
+  if(!c) return;
+  const bal = Number(c.balance);
+  document.getElementById('custName').textContent = c.name;
+  document.getElementById('custPhone').textContent = c.phone ? '📱 ' + c.phone : 'Walang number';
+  const balEl = document.getElementById('custBalance');
+  balEl.textContent = pesoExact(Math.max(bal, 0));
+  balEl.style.color = bal > 0 ? 'var(--red)' : 'var(--green)';
+  let limitText = '';
+  if(bal < 0) limitText = `May sobrang bayad: ${pesoExact(-bal)}`;
+  else if(c.credit_limit != null) limitText = `Credit limit: ${pesoExact(c.credit_limit)}` + (bal > Number(c.credit_limit) ? ' — LAMPAS NA!' : '');
+  document.getElementById('custLimit').textContent = limitText;
+
+  const reversedIds = new Set(currentEntries.filter(e => e.type === 'reversal').map(e => e.reverses_id));
+  const byId = Object.fromEntries(currentEntries.map(e => [e.id, e]));
+  const hist = document.getElementById('custHistory');
+  hist.innerHTML = '';
+  if(currentEntries.length === 0){
+    hist.innerHTML = '<div class="empty" style="padding:14px;">Wala pang utang o bayad.</div>';
+    return;
+  }
+  currentEntries.forEach(e=>{
+    const row = document.createElement('div');
+    const isReversed = reversedIds.has(e.id);
+    row.className = 'entry' + (isReversed ? ' reversed' : '');
+    let label, amtClass, sign;
+    if(e.type === 'charge'){ label = 'Utang'; amtClass = 'charge'; sign = '+'; }
+    else if(e.type === 'payment'){ label = 'Bayad'; amtClass = 'payment'; sign = '−'; }
+    else {
+      const orig = byId[e.reverses_id];
+      label = 'Undo ' + (orig ? (orig.type === 'charge' ? 'utang' : 'bayad') : '');
+      amtClass = ''; sign = '';
+    }
+    const canUndo = e.type !== 'reversal' && !isReversed;
+    row.innerHTML = `
+      <div>
+        <div><b>${label}</b>${e.note ? ' — ' + escapeHtml(e.note) : ''}</div>
+        <div class="entry-sub">${formatDate(e.created_at)}</div>
+        ${canUndo ? `<button class="undo-btn" data-id="${e.id}">↺ Undo</button>` : ''}
+      </div>
+      <div class="entry-amt ${amtClass}">${sign}${pesoExact(e.amount)}</div>`;
+    hist.appendChild(row);
+  });
+  hist.querySelectorAll('.undo-btn').forEach(b=> b.addEventListener('click', ()=> undoEntry(b.dataset.id)));
+}
+
+// --- utang / bayad amount modal ---
+function openAmtModal(mode){
+  const c = currentCustomer();
+  if(!c) return;
+  amtMode = mode;
+  document.getElementById('amtTitle').textContent = mode === 'charge' ? `Bagong utang — ${c.name}` : `Bayad ni ${c.name}`;
+  document.getElementById('amtInput').value = '';
+  document.getElementById('amtNote').value = '';
+  document.getElementById('amtNote').placeholder = mode === 'charge' ? 'Note (optional, e.g. 2 Coke, 1kg bigas)' : 'Note (optional, e.g. GCash)';
+  document.getElementById('amtHint').textContent = `Utang ngayon: ${pesoExact(Math.max(Number(c.balance),0))}`;
+  document.getElementById('amtOverlay').classList.add('open');
+  setTimeout(()=> document.getElementById('amtInput').focus(), 50);
+}
+function closeAmtModal(){ document.getElementById('amtOverlay').classList.remove('open'); amtMode = null; }
+
+document.getElementById('btnAddUtang').addEventListener('click', ()=> openAmtModal('charge'));
+document.getElementById('btnBayad').addEventListener('click', ()=> openAmtModal('payment'));
+document.getElementById('amtCancel').addEventListener('click', closeAmtModal);
+document.getElementById('amtOverlay').addEventListener('click', e=>{ if(e.target.id === 'amtOverlay') closeAmtModal(); });
+
+document.getElementById('amtConfirm').addEventListener('click', async ()=>{
+  const btn = document.getElementById('amtConfirm');
+  const c = currentCustomer();
+  const amount = Math.round(parseFloat(document.getElementById('amtInput').value) * 100) / 100;
+  const note = document.getElementById('amtNote').value.trim();
+  if(!c || !amount || amount <= 0){ alert('Ilagay ang tamang halaga.'); return; }
+
+  const bal = Number(c.balance);
+  if(amtMode === 'charge' && c.credit_limit != null && bal + amount > Number(c.credit_limit)){
+    if(!confirm(`Lalampas na sa credit limit (${pesoExact(c.credit_limit)}). Ituloy pa rin?`)) return;
+  }
+  if(amtMode === 'payment' && amount > bal){
+    if(!confirm(`Mas malaki ang bayad (${pesoExact(amount)}) kaysa utang (${pesoExact(Math.max(bal,0))}). Ituloy?`)) return;
+  }
+
+  btn.disabled = true;
+  const whoNote = [note, myName ? `(${myName})` : ''].filter(Boolean).join(' ');
+  const { error } = await sb.from('utang_entries').insert({
+    store_code: storeCode, customer_id: c.customer_id, type: amtMode, amount, note: whoNote || null
+  });
+  btn.disabled = false;
+  if(error){ console.error(error); alert('Hindi na-save: ' + error.message); return; }
+  closeAmtModal();
+  await refreshCustomerDetail();
+});
+
+// --- undo (reversal) ---
+async function undoEntry(entryId){
+  const e = currentEntries.find(x => x.id === entryId);
+  if(!e) return;
+  const what = e.type === 'charge' ? 'utang' : 'bayad';
+  if(!confirm(`I-undo ang ${what} na ${pesoExact(e.amount)}?`)) return;
+  const { error } = await sb.from('utang_entries').insert({
+    store_code: storeCode, customer_id: e.customer_id, type: 'reversal',
+    amount: e.amount, reverses_id: e.id, note: myName ? `Undo (${myName})` : 'Undo'
+  });
+  if(error){ console.error(error); alert('Hindi na-undo: ' + error.message); return; }
+  await refreshCustomerDetail();
+}
+
+// --- paalala (SMS reminder) ---
+document.getElementById('btnPaalala').addEventListener('click', async ()=>{
+  const c = currentCustomer();
+  if(!c) return;
+  const bal = Number(c.balance);
+  if(bal <= 0){ alert(`Wala nang utang si ${c.name}. 🎉`); return; }
+  const msg = `Maayong adlaw, ${c.name}! Paalala lang gikan sa ${STORE_DISPLAY_NAME}: ang imong utang karon kay ${pesoExact(bal)}. Salamat kaayo!`;
+  const phone = cleanPhone(c.phone);
+  if(phone){
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    window.location.href = `sms:${phone}${isIOS ? '&' : '?'}body=${encodeURIComponent(msg)}`;
+  } else {
+    try{
+      await navigator.clipboard.writeText(msg);
+      alert('Walang number si ' + c.name + '. Nakopya na ang mensahe — i-paste sa Messenger.');
+    }catch(err){
+      prompt('Walang number. Kopyahin ang mensahe:', msg);
+    }
+  }
+});
+
+/* ============================================================
+   9. INIT
    ============================================================ */
 function initApp(){
   refreshAll();
+  loadCustomers().then(renderCustomers);
 }
 checkGate();
 </script>
