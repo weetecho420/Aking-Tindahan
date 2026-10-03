@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XERA SUNNYDAY — Store Tracker</title>
+<title>Aking Tindahan — Store Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -92,6 +92,34 @@
   .gate-card button{width:100%;padding:11px;border-radius:8px;border:none;background:var(--green);color:#fff;font-weight:700;font-size:15px;}
   .gate-card button:disabled{opacity:0.6;}
   .gate-error{color:var(--red);font-size:13px;min-height:18px;margin:-2px 0 8px;}
+  .gate-card .gate-link{background:none;color:var(--ink-soft);font-weight:500;font-size:13px;margin-top:12px;padding:6px;}
+  .gate-card .gate-link b{color:var(--green);}
+  .gate-hint{font-size:11px;color:var(--ink-soft);text-align:left;margin:-6px 0 10px;}
+
+  .trial-banner{margin-top:14px;border-radius:12px;padding:10px 14px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .trial-banner.ok{background:var(--mango-light);border:1px solid var(--mango);color:#8A5A0E;}
+  .trial-banner.expired{background:var(--red-light);border:1px solid var(--red);color:var(--red);}
+  .trial-banner button{border:none;border-radius:8px;padding:7px 12px;font-weight:700;font-size:13px;white-space:nowrap;background:var(--green);color:#fff;}
+  #payOverlay{z-index:70;}
+  #qrShowOverlay{z-index:65;}
+
+  .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 12px;}
+  .plan-btn{background:var(--paper);border:2px solid var(--border);border-radius:12px;padding:10px 6px;color:var(--ink);}
+  .plan-btn .label{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-soft);font-weight:700;}
+  .plan-btn .value{font-family:'Baloo 2',sans-serif;font-size:24px;font-weight:800;}
+  .plan-btn.active{border-color:var(--green);background:var(--green-light);}
+  .save-tag{display:inline-block;background:var(--mango);color:var(--ink);border-radius:5px;padding:0 5px;font-size:9px;text-transform:none;letter-spacing:0;}
+  .big-pay-btn{width:100%;padding:13px;border-radius:10px;font-weight:800;font-size:15px;}
+  .big-pay-btn:disabled{opacity:0.6;}
+
+  .qr-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;}
+  .qr-card img{display:block;max-width:180px;width:100%;margin:0 auto 10px;border-radius:8px;border:1px solid var(--border);}
+  .qr-card input[type=text]{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--paper);margin:8px 0;}
+
+  .method-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0 0 10px;}
+  .method-btn{border:1px solid var(--border);background:var(--card);border-radius:8px;padding:8px 2px;font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .method-btn.active{border-color:var(--green);background:var(--green-light);color:var(--green);}
+  .method-tag{display:inline-block;font-size:10px;font-weight:700;border-radius:5px;padding:0 5px;margin-left:4px;background:var(--green-light);color:var(--green);}
 
   /* ---------- TABS ---------- */
   .tabs{display:flex;gap:4px;margin:16px 0 0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;}
@@ -131,26 +159,47 @@
 </head>
 <body>
 
-<!-- STORE CODE + NAME GATE -->
+<!-- LOGIN / SIGN-UP GATE -->
 <div id="gateOverlay">
   <div class="gate-card">
-    <h2>XERA SUNNYDAY</h2>
-    <p style="color:var(--ink-soft);font-size:13px;margin-top:-8px;">I-type ang store code, PIN, at ang pangalan mo para magsimula.</p>
-    <input type="text" id="gateStoreCode" placeholder="Store code" autocapitalize="characters">
-    <input type="password" id="gatePin" placeholder="PIN" inputmode="numeric" autocomplete="off">
-    <input type="text" id="gateName" placeholder="Pangalan mo (e.g. Henry)">
-    <div class="gate-error" id="gateError"></div>
-    <button id="gateEnter">Pasok</button>
+    <!-- LOGIN -->
+    <div id="gateLogin">
+      <h2>Aking Tindahan</h2>
+      <p style="color:var(--ink-soft);font-size:13px;margin-top:-8px;">I-type ang store code, PIN, at ang pangalan mo para magsimula.</p>
+      <input type="text" id="gateStoreCode" placeholder="Store code" autocapitalize="characters">
+      <input type="password" id="gatePin" placeholder="PIN" inputmode="numeric" autocomplete="off">
+      <input type="text" id="gateName" placeholder="Pangalan mo (e.g. Henry)">
+      <div class="gate-error" id="gateError"></div>
+      <button id="gateEnter">Pasok</button>
+      <button class="gate-link" id="showSignup">Bagong tindahan? <b>Mag-sign up — 30 araw libre</b></button>
+    </div>
+
+    <!-- SIGN-UP -->
+    <div id="gateSignup" style="display:none;">
+      <h2>Bagong tindahan</h2>
+      <p style="color:var(--ink-soft);font-size:13px;margin-top:-8px;">Libre ang unang 30 araw. Walang kailangang card.</p>
+      <input type="text" id="suStoreName" placeholder="Pangalan ng tindahan (e.g. Aling Nena Store)" maxlength="60">
+      <input type="text" id="suStoreCode" placeholder="Store code (letters at numbers)" autocapitalize="characters" maxlength="20">
+      <div class="gate-hint">Ito ang ita-type ng staff mo para makapasok. Walang space.</div>
+      <input type="password" id="suPin" placeholder="PIN (4–8 numero)" inputmode="numeric" autocomplete="off" maxlength="8">
+      <input type="password" id="suPin2" placeholder="Ulitin ang PIN" inputmode="numeric" autocomplete="off" maxlength="8">
+      <input type="text" id="suName" placeholder="Pangalan mo (e.g. Nena)">
+      <div class="gate-error" id="suError"></div>
+      <button id="suCreate">Gumawa ng tindahan</button>
+      <button class="gate-link" id="showLogin">May account na? <b>Mag-login</b></button>
+    </div>
   </div>
 </div>
 
 <header>
-  <h1>XERA SUNNYDAY</h1>
+  <h1 id="storeTitle">Aking Tindahan</h1>
   <p>Store tracker — kita, benta, at stock</p>
   <p id="lastUpdated"></p>
 </header>
 
 <div class="wrap">
+
+  <div class="trial-banner" id="trialBanner" style="display:none;"></div>
 
   <div class="tabs">
     <button class="tab active" data-view="paninda">📦 Paninda</button>
@@ -237,6 +286,20 @@
     <div id="custList"></div>
     <div class="empty" id="custEmpty" style="display:none;">Wala pang customer. Pindutin ang "+ Customer" para magsimula.</div>
     <div class="empty" id="custNoResults" style="display:none;">Walang nahanap na customer.</div>
+
+    <!-- STORE'S OWN GCASH / MARIBANK QR -->
+    <div class="section-title">📱 QR para sa bayad ng utang</div>
+    <div class="qr-card">
+      <div id="qrEmpty" class="item-prices">I-upload ang GCash o MariBank QR mo. Ipapakita ito sa customer kapag magbabayad sila ng utang — diretso sa iyo ang pera.</div>
+      <img id="qrPreview" alt="QR" style="display:none;">
+      <input type="text" id="qrLabel" placeholder="Label (e.g. GCash · Henry B. · 0917...)" maxlength="80">
+      <input type="file" id="qrFile" accept="image/png,image/jpeg,image/webp" style="display:none;">
+      <div class="form-actions">
+        <button class="cancel-btn" id="qrRemove" style="display:none;">Tanggalin</button>
+        <button class="save-btn" id="qrPick">📷 Pumili ng QR image</button>
+      </div>
+      <div class="item-prices" id="qrStatus" style="margin-top:6px;"></div>
+    </div>
   </div><!-- /viewUtang -->
 
 </div>
@@ -285,6 +348,7 @@
       <button class="action-btn sell-btn" id="btnBayad">Bayad</button>
       <button class="action-btn restock-btn" id="btnPaalala">📩 Paalala</button>
     </div>
+    <button class="action-btn" id="btnShowQr" style="width:100%;margin-top:6px;display:none;background:var(--card);">📱 Ipakita ang QR para magbayad</button>
     <div class="section-title" style="font-size:15px;margin-top:16px;">Kasaysayan</div>
     <div id="custHistory"></div>
   </div>
@@ -296,6 +360,12 @@
     <h3 id="amtTitle">Utang</h3>
     <input type="number" id="amtInput" placeholder="Halaga (₱)" inputmode="decimal" min="0" step="0.01">
     <input type="text" id="amtNote" placeholder="Note (optional, e.g. 2 Coke, 1kg bigas)">
+    <div class="method-row" id="amtMethodRow" style="display:none;">
+      <button type="button" class="method-btn active" data-method="cash">💵 Cash</button>
+      <button type="button" class="method-btn" data-method="gcash">GCash</button>
+      <button type="button" class="method-btn" data-method="maribank">MariBank</button>
+      <button type="button" class="method-btn" data-method="maya">Maya</button>
+    </div>
     <div class="item-prices" id="amtHint" style="margin:-4px 0 10px;"></div>
     <div class="form-actions">
       <button class="cancel-btn" id="amtCancel">Cancel</button>
@@ -304,7 +374,55 @@
   </div>
 </div>
 
-<footer>Shared na ang datos — kayong dalawa ni misis ang pwedeng mag-update.<br><button class="logout-link" id="logoutBtn">Mag-logout</button></footer>
+<!-- SHOW STORE QR TO CUSTOMER -->
+<div class="modal-overlay" id="qrShowOverlay">
+  <div class="modal" style="text-align:center;">
+    <h3 id="qrShowTitle">Magbayad</h3>
+    <div class="balance-box" style="margin:8px 0;">
+      <div class="label">Utang</div>
+      <div class="value" id="qrShowAmount" style="color:var(--red);">₱0</div>
+    </div>
+    <img id="qrShowImg" alt="QR" style="width:100%;max-width:300px;border-radius:10px;border:1px solid var(--border);">
+    <div id="qrShowLabel" style="font-weight:700;margin:8px 0;"></div>
+    <div class="item-prices">I-scan gamit ang GCash, MariBank, Maya, o ibang bank app (QR Ph). Pagkatapos, i-tap ang "Nabayaran na".</div>
+    <div class="form-actions" style="margin-top:12px;">
+      <button class="cancel-btn" id="qrShowClose">Isara</button>
+      <button class="save-btn" id="qrShowPaid">✓ Nabayaran na</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBSCRIPTION PAYMENT MODAL -->
+<div class="modal-overlay" id="payOverlay">
+  <div class="modal" style="text-align:center;">
+    <h3>Ituloy ang Aking Tindahan</h3>
+    <div class="plan-grid">
+      <button type="button" class="plan-btn active" data-plan="monthly">
+        <div class="label">Buwanan</div>
+        <div class="value" id="payPriceMonthly">₱185</div>
+        <div class="item-prices">kada buwan</div>
+      </button>
+      <button type="button" class="plan-btn" data-plan="yearly">
+        <div class="label">Taunan <span class="save-tag">2 buwan libre</span></div>
+        <div class="value" id="payPriceYearly">₱1,850</div>
+        <div class="item-prices">kada taon</div>
+      </button>
+    </div>
+    <button class="save-btn big-pay-btn" id="payNow">Magbayad gamit ang GCash / QR Ph / Card</button>
+    <div class="item-prices" style="margin-top:6px;">Pwede ang GCash, Maya, MariBank at ibang bank apps (QR Ph). Automatic ang activation pagkabayad.</div>
+    <div class="item-prices" id="payStatus" style="margin-top:6px;color:var(--red);"></div>
+
+    <div id="payManual" style="display:none;text-align:left;font-size:13px;line-height:1.6;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+      <b>Ibang paraan (manual):</b><br>
+      I-send ang bayad sa GCash: <b id="payGcash"></b>, i-screenshot ang resibo, at i-send sa <b id="payContact"></b> kasama ang store code: <b id="payStoreCode"></b>.
+    </div>
+    <div class="form-actions" style="margin-top:14px;">
+      <button class="cancel-btn" id="payClose">Isara</button>
+    </div>
+  </div>
+</div>
+
+<footer><span id="footerText">Shared ang datos sa lahat ng naka-login sa tindahan mo.</span><br><button class="logout-link" id="logoutBtn">Mag-logout</button></footer>
 
 <script>
 /* ============================================================
@@ -314,6 +432,13 @@ const SUPABASE_URL = "https://kikqcrfakutkxfrocykm.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpa3FjcmZha3V0a3hmcm9jeWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTY1MTMsImV4cCI6MjA5OTI5MjUxM30.t_-LcCp_niK6VL7f6sE61p54_TfyIEKOaSJBSFSv8jo";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------- SUBSCRIPTION SETTINGS (edit these) ---------- */
+// Display only — the real prices are enforced on the server (create-checkout function)
+const MONTHLY_PRICE = 185;                         // ₱ per month
+const YEARLY_PRICE = 1850;                         // ₱ per year (2 months free)
+const PAYMENT_GCASH = '09XX XXX XXXX (Henry B.)';  // ← put your GCash number + name
+const PAYMENT_CONTACT = 'Facebook: XeraDC';        // ← where owners send the receipt
 
 /* ============================================================
    2. STATE
@@ -345,6 +470,7 @@ function formatTimeAgo(iso){
    ============================================================ */
 function showGate(message){
   document.getElementById('gateOverlay').style.display = 'flex';
+  showGateMode('login');
   if(storeCode) document.getElementById('gateStoreCode').value = storeCode;
   if(myName) document.getElementById('gateName').value = myName;
   document.getElementById('gateError').textContent = message || '';
@@ -407,6 +533,223 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   storeCode = null;
   showGate();
 });
+
+/* ---------- SIGN-UP ---------- */
+function showGateMode(mode){
+  document.getElementById('gateLogin').style.display = mode === 'login' ? 'block' : 'none';
+  document.getElementById('gateSignup').style.display = mode === 'signup' ? 'block' : 'none';
+}
+document.getElementById('showSignup').addEventListener('click', ()=> showGateMode('signup'));
+document.getElementById('showLogin').addEventListener('click', ()=> showGateMode('login'));
+
+// Suggest a store code from the store name, e.g. "Aling Nena Store" -> ALINGNENA123
+let codeEdited = false;
+document.getElementById('suStoreCode').addEventListener('input', e=>{
+  codeEdited = true;
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+});
+document.getElementById('suStoreName').addEventListener('input', e=>{
+  if(codeEdited) return;
+  const base = e.target.value.toUpperCase().replace(/STORE|SARI-?SARI|TINDAHAN/g,'').replace(/[^A-Z0-9]/g,'').slice(0,12);
+  document.getElementById('suStoreCode').value = base ? base + (Math.floor(Math.random()*900)+100) : '';
+});
+
+document.getElementById('suCreate').addEventListener('click', async ()=>{
+  const btn = document.getElementById('suCreate');
+  const err = document.getElementById('suError');
+  const storeName = document.getElementById('suStoreName').value.trim();
+  const code = document.getElementById('suStoreCode').value.replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+  const pin = document.getElementById('suPin').value.trim();
+  const pin2 = document.getElementById('suPin2').value.trim();
+  const name = document.getElementById('suName').value.trim();
+
+  if(storeName.length < 2) { err.textContent = 'Ilagay ang pangalan ng tindahan.'; return; }
+  if(!/^[A-Z0-9]{4,20}$/.test(code)) { err.textContent = 'Store code: 4–20 letters/numbers, walang space.'; return; }
+  if(!/^[0-9]{4,8}$/.test(pin)) { err.textContent = 'PIN: 4–8 numero lang.'; return; }
+  if(pin !== pin2) { err.textContent = 'Hindi magkapareho ang PIN.'; return; }
+  if(!name) { err.textContent = 'Ilagay ang pangalan mo.'; return; }
+  err.textContent = '';
+
+  btn.disabled = true; btn.textContent = 'Sandali...';
+  try{
+    if(!(await ensureSession())) { err.textContent = 'Hindi maka-connect. Subukan ulit.'; return; }
+    const { data, error } = await sb.rpc('create_store', { p_store_code: code, p_store_name: storeName, p_pin: pin });
+    if(error){ console.error(error); err.textContent = 'May error: ' + error.message; return; }
+    if(data === 'taken'){ err.textContent = 'May gumagamit na ng store code na iyan. Pumili ng iba.'; return; }
+    if(data !== 'ok'){ err.textContent = 'Hindi nagawa (' + data + '). I-check ang details.'; return; }
+
+    storeCode = code; myName = name;
+    localStorage.setItem('tindahan-store-code', code);
+    localStorage.setItem('tindahan-my-name', name);
+    alert(`Tapos na! 🎉\n\nStore code mo: ${code}\n\nI-save ito at ang PIN mo. Kailangan ito ng staff mo para makapasok.`);
+    showGateMode('login');
+    await checkGate();
+  } finally {
+    btn.disabled = false; btn.textContent = 'Gumawa ng tindahan';
+  }
+});
+
+/* ---------- STORE INFO + TRIAL BANNER ---------- */
+let storeActive = true;
+let lastPaidUntil = null;
+async function loadStoreInfo(){
+  const { data, error } = await sb.rpc('get_my_store', { p_store_code: storeCode });
+  if(error || !data || !data[0]){ if(error) console.error(error); return; }
+  const s = data[0];
+  STORE_DISPLAY_NAME = s.store_name || storeCode;
+  document.getElementById('storeTitle').textContent = STORE_DISPLAY_NAME;
+  document.title = STORE_DISPLAY_NAME + ' — Aking Tindahan';
+  storeActive = s.active;
+  lastPaidUntil = s.paid_until;
+  storeQrUrl = s.payment_qr_url || null;
+  storeQrLabel = s.payment_qr_label || null;
+  renderQrCard();
+
+  const banner = document.getElementById('trialBanner');
+  const paidMs = s.paid_until ? new Date(s.paid_until) - Date.now() : 0;
+  const trialMs = s.trial_ends_at ? new Date(s.trial_ends_at) - Date.now() : 0;
+  const days = ms => Math.max(0, Math.ceil(ms / 86400000));
+
+  if(!s.active){
+    banner.className = 'trial-banner expired';
+    banner.innerHTML = `<span>⛔ Tapos na ang ${s.paid_until ? 'subscription' : 'free trial'}. Makikita mo pa ang datos, pero hindi na makakapag-save.</span><button id="bannerPay">Magbayad</button>`;
+    banner.style.display = 'flex';
+  } else if(paidMs <= 0 && trialMs > 0){
+    banner.className = 'trial-banner ok';
+    banner.innerHTML = `<span>🎁 Free trial: <b>${days(trialMs)} araw</b> na lang</span><button id="bannerPay">Magbayad</button>`;
+    banner.style.display = 'flex';
+  } else if(paidMs > 0 && paidMs < 5*86400000){
+    banner.className = 'trial-banner ok';
+    banner.innerHTML = `<span>⏰ Mag-e-expire sa <b>${days(paidMs)} araw</b></span><button id="bannerPay">Mag-renew</button>`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+  const payBtn = document.getElementById('bannerPay');
+  if(payBtn) payBtn.addEventListener('click', openPayModal);
+}
+
+/* ---------- SUBSCRIPTION PAYMENT (PayMongo) ---------- */
+let selectedPlan = 'monthly';
+function openPayModal(){
+  document.getElementById('payPriceMonthly').textContent = pesoExact(MONTHLY_PRICE);
+  document.getElementById('payPriceYearly').textContent = pesoExact(YEARLY_PRICE);
+  document.getElementById('payStatus').textContent = '';
+  // Manual GCash fallback only shows once you've put in your real number
+  const manualOk = PAYMENT_GCASH && !/X{3}/.test(PAYMENT_GCASH);
+  document.getElementById('payManual').style.display = manualOk ? 'block' : 'none';
+  document.getElementById('payGcash').textContent = PAYMENT_GCASH;
+  document.getElementById('payContact').textContent = PAYMENT_CONTACT;
+  document.getElementById('payStoreCode').textContent = storeCode;
+  document.getElementById('payOverlay').classList.add('open');
+}
+document.getElementById('payClose').addEventListener('click', ()=> document.getElementById('payOverlay').classList.remove('open'));
+document.querySelectorAll('.plan-btn').forEach(b=> b.addEventListener('click', ()=>{
+  selectedPlan = b.dataset.plan;
+  document.querySelectorAll('.plan-btn').forEach(x=> x.classList.toggle('active', x === b));
+}));
+
+document.getElementById('payNow').addEventListener('click', async ()=>{
+  const btn = document.getElementById('payNow');
+  const status = document.getElementById('payStatus');
+  if(btn.disabled) return;
+  btn.disabled = true; btn.textContent = 'Binubuksan ang bayaran...';
+  status.textContent = '';
+  try{
+    const { data, error } = await sb.functions.invoke('create-checkout', {
+      body: { store_code: storeCode, plan: selectedPlan }
+    });
+    if(error || !data || !data.checkout_url){
+      console.error(error, data);
+      let code = data && data.error;
+      try{ if(!code && error && error.context) code = (await error.context.json()).error; }catch(e){}
+      status.textContent = code === 'not_configured'
+        ? 'Hindi pa naka-setup ang online payment. Gamitin muna ang manual na paraan sa ibaba.'
+        : 'Hindi mabuksan ang bayaran. Subukan ulit mamaya.';
+      return;
+    }
+    window.location.href = data.checkout_url;   // PayMongo page: GCash / QR Ph / card
+  } finally {
+    btn.disabled = false; btn.textContent = 'Magbayad gamit ang GCash / QR Ph / Card';
+  }
+});
+
+// Coming back from PayMongo: ?paid=1 (success) or ?paid=0 (cancelled)
+async function handlePaymentReturn(){
+  const params = new URLSearchParams(window.location.search);
+  if(!params.has('paid')) return;
+  const ok = params.get('paid') === '1';
+  history.replaceState(null, '', window.location.pathname);
+  if(!ok) return;
+  // The webhook activates the store; give it a few seconds
+  for(let i = 0; i < 6; i++){
+    await loadStoreInfo();
+    if(storeActive && lastPaidUntil && new Date(lastPaidUntil) > Date.now()) break;
+    await new Promise(r => setTimeout(r, 2500));
+  }
+  alert(lastPaidUntil && new Date(lastPaidUntil) > Date.now()
+    ? `Salamat sa bayad! 🎉\nActive hanggang ${new Date(lastPaidUntil).toLocaleDateString('en-PH', { month:'long', day:'numeric', year:'numeric' })}.`
+    : 'Salamat! Pinoproseso pa ang bayad mo — i-refresh ang app pagkalipas ng ilang minuto.');
+}
+
+/* ---------- STORE'S OWN QR (for customers paying utang) ---------- */
+let storeQrUrl = null, storeQrLabel = null;
+function renderQrCard(){
+  const has = !!storeQrUrl;
+  const img = document.getElementById('qrPreview');
+  img.style.display = has ? 'block' : 'none';
+  if(has) img.src = storeQrUrl;
+  document.getElementById('qrEmpty').style.display = has ? 'none' : 'block';
+  document.getElementById('qrRemove').style.display = has ? 'block' : 'none';
+  document.getElementById('qrPick').textContent = has ? '📷 Palitan ang QR' : '📷 Pumili ng QR image';
+  const labelEl = document.getElementById('qrLabel');
+  if(document.activeElement !== labelEl) labelEl.value = storeQrLabel || '';
+  document.getElementById('btnShowQr').style.display = has ? 'block' : 'none';
+}
+
+document.getElementById('qrPick').addEventListener('click', ()=> document.getElementById('qrFile').click());
+document.getElementById('qrFile').addEventListener('change', async e=>{
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  const status = document.getElementById('qrStatus');
+  if(!/^image\/(png|jpeg|webp)$/.test(file.type)){ status.textContent = 'PNG, JPG o WEBP lang.'; return; }
+  if(file.size > 2 * 1024 * 1024){ status.textContent = 'Masyadong malaki (max 2 MB). I-crop ang screenshot.'; return; }
+  status.textContent = 'Ina-upload...';
+  const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${storeCode}/qr-${Date.now()}.${ext}`;
+  const { error: upErr } = await sb.storage.from('store-qr').upload(path, file, { contentType: file.type });
+  if(upErr){ console.error(upErr); status.textContent = 'Hindi na-upload: ' + upErr.message; return; }
+  const url = sb.storage.from('store-qr').getPublicUrl(path).data.publicUrl;
+  const label = document.getElementById('qrLabel').value.trim();
+  const { data, error } = await sb.rpc('set_store_qr', { p_store_code: storeCode, p_url: url, p_label: label });
+  if(error || data !== true){ console.error(error); status.textContent = 'Hindi na-save ang QR.'; return; }
+  storeQrUrl = url; storeQrLabel = label || null;
+  status.textContent = '✓ Na-save ang QR!';
+  renderQrCard();
+});
+
+document.getElementById('qrLabel').addEventListener('change', async e=>{
+  if(!storeQrUrl) return;
+  const { data } = await sb.rpc('set_store_qr', { p_store_code: storeCode, p_url: storeQrUrl, p_label: e.target.value.trim() });
+  if(data === true){ storeQrLabel = e.target.value.trim() || null; document.getElementById('qrStatus').textContent = '✓ Na-save ang label.'; }
+});
+
+document.getElementById('qrRemove').addEventListener('click', async ()=>{
+  if(!confirm('Tanggalin ang QR?')) return;
+  const { data } = await sb.rpc('set_store_qr', { p_store_code: storeCode, p_url: null, p_label: null });
+  if(data === true){ storeQrUrl = null; storeQrLabel = null; document.getElementById('qrStatus').textContent = 'Natanggal na.'; renderQrCard(); }
+});
+
+// When a save is blocked because the trial ended, show the payment screen instead of a confusing error
+function handleSaveError(error){
+  console.error(error);
+  if(!storeActive || /row-level security/i.test(error.message || '')){
+    loadStoreInfo().then(()=>{ if(!storeActive) openPayModal(); else alert('Hindi na-save: ' + error.message); });
+    return;
+  }
+  alert('Hindi na-save: ' + error.message);
+}
 
 /* ============================================================
    4. DATA LOADING
@@ -532,7 +875,9 @@ function render(){
    ============================================================ */
 async function deleteItem(id){
   const target = items.find(i=>i.id === id);
-  await sb.from('items').delete().eq('id', id);
+  if(!storeActive){ openPayModal(); return; }
+  const { error } = await sb.from('items').delete().eq('id', id);
+  if(error){ handleSaveError(error); return; }
   if(target){
     const remainingValue = target.buy_price * target.stock;
     await logActivity('delete', target.name, target.stock, 0, 0, -remainingValue);
@@ -564,7 +909,7 @@ document.getElementById('qtyConfirm').addEventListener('click', async ()=>{
     const { error } = await sb.rpc('record_stock_change', {
       p_item_id: item.id, p_mode: qtyMode, p_qty: qty, p_who: myName
     });
-    if(error){ console.error(error); alert('Hindi na-save: ' + error.message); return; }
+    if(error){ closeQtyModal(); handleSaveError(error); return; }
     closeQtyModal();
     await refreshAll();
   } finally {
@@ -599,7 +944,7 @@ document.getElementById('saveAdd').addEventListener('click', async ()=>{
   saveBtn.disabled = true;
   try{
     const { error } = await sb.from('items').insert({ store_code: storeCode, name, barcode, buy_price: buy, sell_price: sell, stock });
-    if(error){ console.error(error); alert('Hindi na-save: ' + error.message); return; }
+    if(error){ handleSaveError(error); return; }
     await logActivity('add', name, stock, 0, 0, stock*buy);
   } finally {
     saveBtn.disabled = false;
@@ -685,7 +1030,7 @@ async function onBarcodeDetected(code){
    Mistakes are fixed with an "undo" (reversal) row.
    The balance is calculated by the database view customer_balances.
    ============================================================ */
-const STORE_DISPLAY_NAME = 'XERA SUNNYDAY';
+let STORE_DISPLAY_NAME = 'Aking Tindahan';
 let customers = [];
 let currentCustomerId = null;
 let currentEntries = [];
@@ -776,7 +1121,7 @@ document.getElementById('custSaveAdd').addEventListener('click', async ()=>{
     store_code: storeCode, name, phone: phone || null, notes: notes || null, credit_limit
   });
   btn.disabled = false;
-  if(error){ console.error(error); alert('Hindi na-save: ' + error.message); return; }
+  if(error){ handleSaveError(error); return; }
 
   clearCustForm();
   document.getElementById('custForm').classList.remove('open');
@@ -847,7 +1192,7 @@ function renderCustomerDetail(){
     const canUndo = e.type !== 'reversal' && !isReversed;
     row.innerHTML = `
       <div>
-        <div><b>${label}</b>${e.note ? ' — ' + escapeHtml(e.note) : ''}</div>
+        <div><b>${label}</b>${e.method && e.method !== 'cash' ? `<span class="method-tag">${METHOD_LABELS[e.method] || e.method}</span>` : ''}${e.note ? ' — ' + escapeHtml(e.note) : ''}</div>
         <div class="entry-sub">${formatDate(e.created_at)}</div>
         ${canUndo ? `<button class="undo-btn" data-id="${e.id}">↺ Undo</button>` : ''}
       </div>
@@ -857,6 +1202,8 @@ function renderCustomerDetail(){
   hist.querySelectorAll('.undo-btn').forEach(b=> b.addEventListener('click', ()=> undoEntry(b.dataset.id)));
 }
 
+const METHOD_LABELS = { cash:'Cash', gcash:'GCash', maribank:'MariBank', maya:'Maya', other:'Iba' };
+
 // --- utang / bayad amount modal ---
 function openAmtModal(mode){
   const c = currentCustomer();
@@ -865,11 +1212,21 @@ function openAmtModal(mode){
   document.getElementById('amtTitle').textContent = mode === 'charge' ? `Bagong utang — ${c.name}` : `Bayad ni ${c.name}`;
   document.getElementById('amtInput').value = '';
   document.getElementById('amtNote').value = '';
-  document.getElementById('amtNote').placeholder = mode === 'charge' ? 'Note (optional, e.g. 2 Coke, 1kg bigas)' : 'Note (optional, e.g. GCash)';
+  document.getElementById('amtNote').placeholder = mode === 'charge' ? 'Note (optional, e.g. 2 Coke, 1kg bigas)' : 'Note (optional)';
+  document.getElementById('amtMethodRow').style.display = mode === 'payment' ? 'grid' : 'none';
+  setPayMethod(mode === 'payment' && pendingQrPayment ? 'gcash' : 'cash');
+  if(mode === 'payment' && pendingQrPayment) document.getElementById('amtInput').value = Math.max(Number(c.balance), 0) || '';
+  pendingQrPayment = false;
   document.getElementById('amtHint').textContent = `Utang ngayon: ${pesoExact(Math.max(Number(c.balance),0))}`;
   document.getElementById('amtOverlay').classList.add('open');
   setTimeout(()=> document.getElementById('amtInput').focus(), 50);
 }
+let payMethod = 'cash', pendingQrPayment = false;
+function setPayMethod(m){
+  payMethod = m;
+  document.querySelectorAll('.method-btn').forEach(b=> b.classList.toggle('active', b.dataset.method === m));
+}
+document.querySelectorAll('.method-btn').forEach(b=> b.addEventListener('click', ()=> setPayMethod(b.dataset.method)));
 function closeAmtModal(){ document.getElementById('amtOverlay').classList.remove('open'); amtMode = null; }
 
 document.getElementById('btnAddUtang').addEventListener('click', ()=> openAmtModal('charge'));
@@ -895,10 +1252,11 @@ document.getElementById('amtConfirm').addEventListener('click', async ()=>{
   btn.disabled = true;
   const whoNote = [note, myName ? `(${myName})` : ''].filter(Boolean).join(' ');
   const { error } = await sb.from('utang_entries').insert({
-    store_code: storeCode, customer_id: c.customer_id, type: amtMode, amount, note: whoNote || null
+    store_code: storeCode, customer_id: c.customer_id, type: amtMode, amount, note: whoNote || null,
+    method: amtMode === 'payment' ? payMethod : null
   });
   btn.disabled = false;
-  if(error){ console.error(error); alert('Hindi na-save: ' + error.message); return; }
+  if(error){ closeAmtModal(); handleSaveError(error); return; }
   closeAmtModal();
   await refreshCustomerDetail();
 });
@@ -913,9 +1271,26 @@ async function undoEntry(entryId){
     store_code: storeCode, customer_id: e.customer_id, type: 'reversal',
     amount: e.amount, reverses_id: e.id, note: myName ? `Undo (${myName})` : 'Undo'
   });
-  if(error){ console.error(error); alert('Hindi na-undo: ' + error.message); return; }
+  if(error){ handleSaveError(error); return; }
   await refreshCustomerDetail();
 }
+
+// --- show store QR to the customer ---
+document.getElementById('btnShowQr').addEventListener('click', ()=>{
+  const c = currentCustomer();
+  if(!c || !storeQrUrl) return;
+  document.getElementById('qrShowTitle').textContent = `Magbayad — ${c.name}`;
+  document.getElementById('qrShowAmount').textContent = pesoExact(Math.max(Number(c.balance), 0));
+  document.getElementById('qrShowImg').src = storeQrUrl;
+  document.getElementById('qrShowLabel').textContent = storeQrLabel || '';
+  document.getElementById('qrShowOverlay').classList.add('open');
+});
+document.getElementById('qrShowClose').addEventListener('click', ()=> document.getElementById('qrShowOverlay').classList.remove('open'));
+document.getElementById('qrShowPaid').addEventListener('click', ()=>{
+  document.getElementById('qrShowOverlay').classList.remove('open');
+  pendingQrPayment = true;          // opens Bayad with GCash selected + amount filled in
+  openAmtModal('payment');
+});
 
 // --- paalala (SMS reminder) ---
 document.getElementById('btnPaalala').addEventListener('click', async ()=>{
@@ -923,7 +1298,8 @@ document.getElementById('btnPaalala').addEventListener('click', async ()=>{
   if(!c) return;
   const bal = Number(c.balance);
   if(bal <= 0){ alert(`Wala nang utang si ${c.name}. 🎉`); return; }
-  const msg = `Maayong adlaw, ${c.name}! Paalala lang gikan sa ${STORE_DISPLAY_NAME}: ang imong utang karon kay ${pesoExact(bal)}. Salamat kaayo!`;
+  const payLine = storeQrLabel ? ` Pwede ra mobayad pinaagi sa ${storeQrLabel}.` : '';
+  const msg = `Maayong adlaw, ${c.name}! Paalala lang gikan sa ${STORE_DISPLAY_NAME}: ang imong utang karon kay ${pesoExact(bal)}.${payLine} Salamat kaayo!`;
   const phone = cleanPhone(c.phone);
   if(phone){
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -942,6 +1318,7 @@ document.getElementById('btnPaalala').addEventListener('click', async ()=>{
    9. INIT
    ============================================================ */
 function initApp(){
+  loadStoreInfo().then(handlePaymentReturn);
   refreshAll();
   loadCustomers().then(renderCustomers);
 }
