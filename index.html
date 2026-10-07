@@ -131,6 +131,25 @@
   .pbox-click:hover,.pbox-click:focus-visible{border-color:var(--green);}
   .pbox-click .pbenta{color:var(--green);font-weight:700;}
   #listOverlay{z-index:55;}
+  #salesOverlay{z-index:55;}
+  .kita-open .pbenta{color:var(--ink-soft);font-weight:400;}
+  .pmore{font-size:12px;font-weight:700;color:var(--green);margin-top:2px;}
+  .sales-tabs,.sales-view{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:3px;margin:8px 0;}
+  .sales-view{grid-template-columns:1fr 1fr;}
+  .sales-tabs button,.sales-view button{background:none;border:none;border-radius:8px;padding:7px 4px;font-size:13px;font-weight:700;color:var(--ink-soft);}
+  .sales-tabs button.active,.sales-view button.active{background:var(--green);color:#fff;}
+  .sales-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;margin:6px 0 4px;}
+  .sales-sum div{background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:6px 4px;}
+  .sales-sum small{display:block;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-soft);letter-spacing:0.3px;}
+  .sales-sum b{font-family:'Baloo 2',sans-serif;font-size:18px;font-variant-numeric:tabular-nums;}
+  .stime{font-weight:800;color:var(--green);font-size:13px;white-space:nowrap;min-width:62px;}
+  .srow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--border);font-size:14px;}
+  .srow:last-child{border-bottom:none;}
+  .srow .sname b{font-weight:700;overflow-wrap:anywhere;}
+  .srow .sname span{display:block;font-size:12px;color:var(--ink-soft);}
+  .samt{text-align:right;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .samt span{display:block;font-size:11px;font-weight:600;color:var(--green);}
+  .sday{font-size:12px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.4px;padding:10px 2px 2px;}
   .list-modal{max-width:440px;max-height:88vh;overflow-y:auto;}
   .list-search{width:100%;box-sizing:border-box;padding:9px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--paper);margin-bottom:6px;}
   .lrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 2px;border-bottom:1px solid var(--border);font-size:14px;}
@@ -315,10 +334,10 @@
   <div class="report-card">
     <div class="report-head"><span class="report-title">💰 Kita</span><span class="report-note" style="margin:0">oras sa Pilipinas</span></div>
     <div class="period-grid">
-      <div class="pbox"><div class="plabel">Ngayong araw</div><div class="pkita" id="kitaDay">₱0</div><div class="pbenta" id="bentaDay">Benta ₱0</div></div>
-      <div class="pbox"><div class="plabel">Ngayong linggo</div><div class="pkita" id="kitaWeek">₱0</div><div class="pbenta" id="bentaWeek">Benta ₱0</div></div>
-      <div class="pbox"><div class="plabel">Ngayong buwan</div><div class="pkita" id="kitaMonth">₱0</div><div class="pbenta" id="bentaMonth">Benta ₱0</div></div>
-      <div class="pbox"><div class="plabel">Ngayong taon</div><div class="pkita" id="kitaYear">₱0</div><div class="pbenta" id="bentaYear">Benta ₱0</div></div>
+      <button type="button" class="pbox pbox-click kita-open" data-period="day"><div class="plabel">Ngayong araw</div><div class="pkita" id="kitaDay">₱0</div><div class="pbenta" id="bentaDay">Benta ₱0</div><div class="pmore">Tingnan ang nabenta ›</div></button>
+      <button type="button" class="pbox pbox-click kita-open" data-period="week"><div class="plabel">Ngayong linggo</div><div class="pkita" id="kitaWeek">₱0</div><div class="pbenta" id="bentaWeek">Benta ₱0</div><div class="pmore">Tingnan ang nabenta ›</div></button>
+      <button type="button" class="pbox pbox-click kita-open" data-period="month"><div class="plabel">Ngayong buwan</div><div class="pkita" id="kitaMonth">₱0</div><div class="pbenta" id="bentaMonth">Benta ₱0</div><div class="pmore">Tingnan ang nabenta ›</div></button>
+      <button type="button" class="pbox pbox-click kita-open" data-period="year"><div class="plabel">Ngayong taon</div><div class="pkita" id="kitaYear">₱0</div><div class="pbenta" id="bentaYear">Benta ₱0</div><div class="pmore">Tingnan ang nabenta ›</div></button>
     </div>
   </div>
 
@@ -583,6 +602,24 @@
 </div>
 
 <footer><span id="footerText">Shared ang datos sa lahat ng naka-login sa tindahan mo.</span><br><button class="logout-link help-open" type="button">❓ Tulong</button> · <button class="logout-link" id="logoutBtn">Mag-logout</button></footer>
+
+<!-- SALES POPUP (from Kita) -->
+<div class="modal-overlay" id="salesOverlay">
+  <div class="modal list-modal">
+    <div class="cust-head">
+      <h3 id="salesTitle">Nabenta</h3>
+      <button class="del-btn" id="salesClose" style="opacity:0.8;font-size:20px;" aria-label="Isara">✕</button>
+    </div>
+    <div class="sales-tabs" id="salesTabs">
+      <button type="button" data-period="day">Araw</button><button type="button" data-period="week">Linggo</button><button type="button" data-period="month">Buwan</button><button type="button" data-period="year">Taon</button>
+    </div>
+    <div class="sales-sum" id="salesSum"></div>
+    <div class="sales-view">
+      <button type="button" data-view="time" class="active">🕒 Bawat benta</button><button type="button" data-view="item">📦 Bawat item</button>
+    </div>
+    <div id="salesRows"><div class="empty" style="padding:14px;">Naglo-load...</div></div>
+  </div>
+</div>
 
 <!-- ITEM LIST POPUP (from Buod ng stock) -->
 <div class="modal-overlay" id="listOverlay">
@@ -1172,6 +1209,76 @@ async function loadPeriods(){
     document.getElementById('benta' + k).textContent = 'Benta ' + peso(Number(r.revenue));
   });
 }
+
+/* ---------- NABENTA popup: click a Kita box to see what was sold ---------- */
+let salesPeriod = 'day', salesView = 'time', salesRowsData = [];
+const PERIOD_TITLES = { day:'Nabenta ngayong araw', week:'Nabenta ngayong linggo', month:'Nabenta ngayong buwan', year:'Nabenta ngayong taon' };
+function periodStartIso(period){
+  const ph = new Date(Date.now() + 8*3600e3);           // Philippine time (UTC+8, walang DST)
+  let y = ph.getUTCFullYear(), m = ph.getUTCMonth(), d = ph.getUTCDate();
+  if(period === 'week') d -= (ph.getUTCDay() + 6) % 7;  // Lunes ang simula ng linggo
+  if(period === 'month') d = 1;
+  if(period === 'year'){ m = 0; d = 1; }
+  return new Date(Date.UTC(y, m, d) - 8*3600e3).toISOString();
+}
+const phTime = iso => new Date(iso).toLocaleTimeString('en-PH', { timeZone:'Asia/Manila', hour:'numeric', minute:'2-digit' });
+const phDay = iso => new Date(iso).toLocaleDateString('en-PH', { timeZone:'Asia/Manila', weekday:'short', month:'short', day:'numeric' });
+async function openSales(period){
+  salesPeriod = period;
+  document.getElementById('salesOverlay').classList.add('open');
+  document.querySelectorAll('#salesTabs button').forEach(b=> b.classList.toggle('active', b.dataset.period === period));
+  document.getElementById('salesTitle').textContent = '🧾 ' + PERIOD_TITLES[period];
+  document.getElementById('salesSum').innerHTML = '';
+  document.getElementById('salesRows').innerHTML = '<div class="empty" style="padding:14px;">Naglo-load...</div>';
+  const { data, error } = await sb.from('activity_log').select('created_at,who,item_name,qty,revenue,profit')
+    .eq('store_code', storeCode).eq('action', 'sell').gte('created_at', periodStartIso(period))
+    .order('created_at', { ascending:false }).limit(5000);
+  if(salesPeriod !== period) return;   // nag-switch na ng tab
+  if(error){ console.error(error); document.getElementById('salesRows').innerHTML = '<div class="empty" style="padding:14px;">Hindi ma-load. Subukan ulit.</div>'; return; }
+  salesRowsData = data || [];
+  renderSales();
+}
+function renderSales(){
+  const rows = salesRowsData;
+  const rev = rows.reduce((s,r)=> s + Number(r.revenue||0), 0);
+  const prof = rows.reduce((s,r)=> s + Number(r.profit||0), 0);
+  const pcs = rows.reduce((s,r)=> s + Number(r.qty||0), 0);
+  document.getElementById('salesSum').innerHTML =
+    `<div><small>Benta</small><b>${peso(rev)}</b></div><div><small>Kita</small><b style="color:var(--green)">${peso(prof)}</b></div><div><small>Piraso</small><b>${pcs.toLocaleString('en-PH')}</b></div>`;
+  document.querySelectorAll('.sales-view button').forEach(b=> b.classList.toggle('active', b.dataset.view === salesView));
+  const box = document.getElementById('salesRows');
+  if(rows.length === 0){ box.innerHTML = '<div class="empty" style="padding:14px;">Wala pang nabenta sa panahong ito.</div>'; return; }
+  let html = '';
+  if(salesView === 'time'){
+    let lastDay = '';
+    const showDays = salesPeriod !== 'day';
+    rows.slice(0, 300).forEach(r=>{
+      const day = phDay(r.created_at);
+      if(showDays && day !== lastDay){ html += `<div class="sday">${day}</div>`; lastDay = day; }
+      html += `<div class="srow"><div class="stime">${phTime(r.created_at)}</div>
+        <div class="sname"><b>${r.qty}× ${escapeHtml(r.item_name || '')}</b><span>${escapeHtml(r.who || '')}</span></div>
+        <div class="samt">${pesoExact(r.revenue)}<span>kita ${pesoExact(r.profit)}</span></div></div>`;
+    });
+    if(rows.length > 300) html += `<div class="report-note" style="text-align:center;">Ipinapakita ang pinakabagong 300 sa ${rows.length} benta. Tingnan ang "Bawat item" para sa kabuuan.</div>`;
+  } else {
+    const g = {};
+    rows.forEach(r=>{
+      const k = r.item_name || '?';
+      g[k] = g[k] || { name:k, qty:0, rev:0, prof:0 };
+      g[k].qty += Number(r.qty||0); g[k].rev += Number(r.revenue||0); g[k].prof += Number(r.profit||0);
+    });
+    Object.values(g).sort((a,b)=> b.rev - a.rev).forEach(x=>{
+      html += `<div class="srow" style="grid-template-columns:1fr auto;"><div class="sname"><b>${escapeHtml(x.name)}</b><span>${x.qty.toLocaleString('en-PH')} piraso</span></div>
+        <div class="samt">${pesoExact(x.rev)}<span>kita ${pesoExact(x.prof)}</span></div></div>`;
+    });
+  }
+  box.innerHTML = html;
+}
+document.querySelectorAll('.kita-open').forEach(b=> b.addEventListener('click', ()=> openSales(b.dataset.period)));
+document.querySelectorAll('#salesTabs button').forEach(b=> b.addEventListener('click', ()=> openSales(b.dataset.period)));
+document.querySelectorAll('.sales-view button').forEach(b=> b.addEventListener('click', ()=>{ salesView = b.dataset.view; renderSales(); }));
+document.getElementById('salesClose').addEventListener('click', ()=> document.getElementById('salesOverlay').classList.remove('open'));
+document.getElementById('salesOverlay').addEventListener('click', e=>{ if(e.target.id === 'salesOverlay') e.currentTarget.classList.remove('open'); });
 
 /* ---------- SALES REPORT: mabenta at mahina ang benta ---------- */
 let reportDays = 30;
