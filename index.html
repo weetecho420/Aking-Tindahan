@@ -216,6 +216,28 @@
   .entry-sub{color:var(--ink-soft);font-size:11px;margin-top:2px;}
   .undo-btn{background:none;border:1px solid var(--border);border-radius:6px;font-size:11px;padding:2px 6px;color:var(--ink-soft);margin-top:4px;}
   #amtOverlay{z-index:60;}
+  #amtOverlay .modal{max-height:92vh;overflow-y:auto;}
+  .entry-note{white-space:pre-line;color:var(--ink);margin-top:3px;line-height:1.45;}
+  .cust-sums{display:flex;justify-content:center;gap:14px;margin-top:6px;font-size:12px;color:var(--ink-soft);}
+  .cust-sums b{color:var(--ink);}
+  .pick-label{font-weight:700;font-size:14px;margin:4px 0 6px;}
+  .pick-label span{font-weight:400;color:var(--ink-soft);font-size:12px;}
+  #pickResults{display:flex;flex-direction:column;gap:4px;margin:-4px 0 8px;}
+  .pick-res{display:flex;justify-content:space-between;gap:8px;align-items:center;background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:14px;text-align:left;width:100%;color:inherit;}
+  .pick-res small{color:var(--ink-soft);}
+  .pick-res.out{opacity:0.5;}
+  #pickCart{display:flex;flex-direction:column;gap:6px;margin-bottom:6px;}
+  .cart-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:var(--card);font-size:14px;}
+  .cart-row .cname{font-weight:700;}
+  .cart-row .csub{font-size:12px;color:var(--ink-soft);}
+  .cart-qty{display:flex;align-items:center;gap:6px;}
+  .cart-qty button{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--paper);font-size:17px;font-weight:700;color:var(--ink);padding:0;}
+  .cart-qty span{min-width:20px;text-align:center;font-weight:700;}
+  .cart-amt{font-weight:800;color:var(--red);white-space:nowrap;}
+  .cart-total{display:flex;justify-content:space-between;font-weight:800;font-size:15px;padding:4px 2px;}
+  .pick-deduct{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--ink-soft);margin:2px 0 8px;}
+  .pick-deduct input{width:auto;margin:0;}
+  .pick-or{font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
   .logout-link{background:none;border:none;color:var(--ink-soft);text-decoration:underline;font-size:11px;margin-top:6px;}
 </style>
 </head>
@@ -471,6 +493,7 @@
       <div class="label">Utang ngayon</div>
       <div class="value" id="custBalance">₱0</div>
       <div class="item-prices" id="custLimit"></div>
+      <div class="cust-sums" id="custSums"></div>
     </div>
     <div class="cust-actions">
       <button class="action-btn utang-btn" id="btnAddUtang">+ Utang</button>
@@ -487,6 +510,14 @@
 <div class="modal-overlay" id="amtOverlay">
   <div class="modal">
     <h3 id="amtTitle">Utang</h3>
+    <div id="amtPicker">
+      <div class="pick-label">🛒 Ano ang inutang? <span>(pumili sa paninda)</span></div>
+      <input type="text" id="pickSearch" placeholder="🔍 I-type ang item, hal. coke" autocomplete="off">
+      <div id="pickResults"></div>
+      <div id="pickCart"></div>
+      <label class="pick-deduct" id="pickDeductRow"><input type="checkbox" id="pickDeduct" checked> Bawasan ang stock (ibibilang na benta)</label>
+      <div class="pick-or">o ilagay ang halaga mismo:</div>
+    </div>
     <input type="number" id="amtInput" placeholder="Halaga (₱)" inputmode="decimal" min="0" step="0.01">
     <input type="text" id="amtNote" placeholder="Note (optional, e.g. 2 Coke, 1kg bigas)">
     <div class="method-row" id="amtMethodRow" style="display:none;">
@@ -1614,6 +1645,11 @@ function renderCustomerDetail(){
 
   const reversedIds = new Set(currentEntries.filter(e => e.type === 'reversal').map(e => e.reverses_id));
   const byId = Object.fromEntries(currentEntries.map(e => [e.id, e]));
+  const live = currentEntries.filter(e => e.type !== 'reversal' && !reversedIds.has(e.id));
+  const sumCharge = live.filter(e => e.type === 'charge').reduce((s,e)=> s + Number(e.amount), 0);
+  const sumPaid = live.filter(e => e.type === 'payment').reduce((s,e)=> s + Number(e.amount), 0);
+  document.getElementById('custSums').innerHTML = currentEntries.length
+    ? `<span>Kabuuang inutang: <b>${pesoExact(sumCharge)}</b></span><span>Nabayaran: <b>${pesoExact(sumPaid)}</b></span>` : '';
   const hist = document.getElementById('custHistory');
   hist.innerHTML = '';
   if(currentEntries.length === 0){
@@ -1635,7 +1671,8 @@ function renderCustomerDetail(){
     const canUndo = e.type !== 'reversal' && !isReversed;
     row.innerHTML = `
       <div>
-        <div><b>${label}</b>${e.method && e.method !== 'cash' ? `<span class="method-tag">${METHOD_LABELS[e.method] || e.method}</span>` : ''}${e.note ? ' — ' + escapeHtml(e.note) : ''}</div>
+        <div><b>${label}</b>${e.method && e.method !== 'cash' ? `<span class="method-tag">${METHOD_LABELS[e.method] || e.method}</span>` : ''}</div>
+        ${e.note ? `<div class="entry-note">${escapeHtml(e.note)}</div>` : ''}
         <div class="entry-sub">${formatDate(e.created_at)}</div>
         ${canUndo ? `<button class="undo-btn" data-id="${e.id}">↺ Undo</button>` : ''}
       </div>
@@ -1657,12 +1694,71 @@ function openAmtModal(mode){
   document.getElementById('amtNote').value = '';
   document.getElementById('amtNote').placeholder = mode === 'charge' ? 'Note (optional, e.g. 2 Coke, 1kg bigas)' : 'Note (optional)';
   document.getElementById('amtMethodRow').style.display = mode === 'payment' ? 'grid' : 'none';
+  document.getElementById('amtPicker').style.display = mode === 'charge' ? 'block' : 'none';
+  utangCart = []; document.getElementById('pickSearch').value = ''; document.getElementById('pickDeduct').checked = true;
+  renderPickResults(); renderCart();
   setPayMethod(mode === 'payment' && pendingQrPayment ? 'gcash' : 'cash');
   if(mode === 'payment' && pendingQrPayment) document.getElementById('amtInput').value = Math.max(Number(c.balance), 0) || '';
   pendingQrPayment = false;
   document.getElementById('amtHint').textContent = `Utang ngayon: ${pesoExact(Math.max(Number(c.balance),0))}`;
   document.getElementById('amtOverlay').classList.add('open');
-  setTimeout(()=> document.getElementById('amtInput').focus(), 50);
+  if(mode === 'payment') setTimeout(()=> document.getElementById('amtInput').focus(), 50);
+}
+
+// --- pick items for an utang (cart) ---
+let utangCart = [];   // [{id, name, price, qty}]
+function renderPickResults(){
+  const box = document.getElementById('pickResults');
+  const q = document.getElementById('pickSearch').value.trim().toLowerCase();
+  box.innerHTML = '';
+  if(!q) return;
+  const matches = items.filter(i => i.name.toLowerCase().includes(q)).slice(0, 6);
+  if(matches.length === 0){ box.innerHTML = '<div class="pick-or">Walang ganyang item sa paninda.</div>'; return; }
+  matches.forEach(i=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pick-res' + (Number(i.stock) <= 0 ? ' out' : '');
+    b.innerHTML = `<span>${escapeHtml(i.name)} <small>· ${Number(i.stock) <= 0 ? 'ubos na' : i.stock + ' pcs'}</small></span><b>${pesoExact(i.sell_price)}</b>`;
+    b.addEventListener('click', ()=>{
+      const inCart = utangCart.find(c => c.id === i.id);
+      if(inCart) inCart.qty++;
+      else utangCart.push({ id: i.id, name: i.name, price: Number(i.sell_price), qty: 1 });
+      document.getElementById('pickSearch').value = '';
+      renderPickResults(); renderCart();
+    });
+    box.appendChild(b);
+  });
+}
+function cartTotal(){ return Math.round(utangCart.reduce((s,c)=> s + c.price * c.qty, 0) * 100) / 100; }
+function renderCart(){
+  const box = document.getElementById('pickCart');
+  const amt = document.getElementById('amtInput');
+  box.innerHTML = '';
+  document.getElementById('pickDeductRow').style.display = utangCart.length ? 'flex' : 'none';
+  document.querySelector('#amtPicker .pick-or').style.display = utangCart.length ? 'none' : 'block';
+  if(utangCart.length === 0){ amt.readOnly = false; amt.style.display = ''; return; }
+  utangCart.forEach((c, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'cart-row';
+    row.innerHTML = `<div><div class="cname">${escapeHtml(c.name)}</div><div class="csub">${pesoExact(c.price)} bawat isa</div></div>
+      <div class="cart-qty"><button type="button" data-d="-1">−</button><span>${c.qty}</span><button type="button" data-d="1">+</button></div>
+      <div class="cart-amt">${pesoExact(c.price * c.qty)}</div>`;
+    row.querySelectorAll('button').forEach(b=> b.addEventListener('click', ()=>{
+      c.qty += Number(b.dataset.d);
+      if(c.qty <= 0) utangCart.splice(idx, 1);
+      renderCart();
+    }));
+    box.appendChild(row);
+  });
+  const tot = document.createElement('div');
+  tot.className = 'cart-total';
+  tot.innerHTML = `<span>Total na utang</span><span style="color:var(--red)">${pesoExact(cartTotal())}</span>`;
+  box.appendChild(tot);
+  amt.value = cartTotal(); amt.readOnly = true; amt.style.display = 'none';
+}
+document.getElementById('pickSearch').addEventListener('input', renderPickResults);
+function cartNoteLines(){
+  return utangCart.map(c => `${c.qty}× ${c.name} @${pesoExact(c.price)} = ${pesoExact(c.price * c.qty)}`).join('\n');
 }
 let payMethod = 'cash', pendingQrPayment = false;
 function setPayMethod(m){
@@ -1692,16 +1788,35 @@ document.getElementById('amtConfirm').addEventListener('click', async ()=>{
     if(!confirm(`Mas malaki ang bayad (${pesoExact(amount)}) kaysa utang (${pesoExact(Math.max(bal,0))}). Ituloy?`)) return;
   }
 
+  const useCart = amtMode === 'charge' && utangCart.length > 0;
+  const deduct = useCart && document.getElementById('pickDeduct').checked;
+  if(deduct){
+    const short = utangCart.filter(c => { const it = items.find(i => i.id === c.id); return !it || c.qty > Number(it.stock); });
+    if(short.length){
+      alert('Kulang ang stock ng: ' + short.map(c => c.name).join(', ') + '.\nBawasan ang dami, o i-uncheck ang "Bawasan ang stock".');
+      return;
+    }
+  }
+
   btn.disabled = true;
-  const whoNote = [note, myName ? `(${myName})` : ''].filter(Boolean).join(' ');
+  const lines = [useCart ? cartNoteLines() : '', note].filter(Boolean).join('\n');
+  const whoNote = [lines, myName ? `(${myName})` : ''].filter(Boolean).join(' ');
   const { error } = await sb.from('utang_entries').insert({
     store_code: storeCode, customer_id: c.customer_id, type: amtMode, amount, note: whoNote || null,
     method: amtMode === 'payment' ? payMethod : null
   });
+  if(error){ btn.disabled = false; closeAmtModal(); handleSaveError(error); return; }
+  if(deduct){
+    const who = `${myName || ''} (utang ni ${c.name})`.trim();
+    for(const ci of utangCart){
+      const r = await sb.rpc('record_stock_change', { p_item_id: ci.id, p_mode: 'sell', p_qty: ci.qty, p_who: who });
+      if(r.error){ console.error(r.error); alert('Na-save ang utang, pero hindi nabawas ang stock ng ' + ci.name + '. Pakicheck.'); }
+    }
+  }
   btn.disabled = false;
-  if(error){ closeAmtModal(); handleSaveError(error); return; }
   closeAmtModal();
   await refreshCustomerDetail();
+  if(deduct) refreshAll();
 });
 
 // --- undo (reversal) ---
@@ -1709,7 +1824,9 @@ async function undoEntry(entryId){
   const e = currentEntries.find(x => x.id === entryId);
   if(!e) return;
   const what = e.type === 'charge' ? 'utang' : 'bayad';
-  if(!confirm(`I-undo ang ${what} na ${pesoExact(e.amount)}?`)) return;
+  const hadItems = e.type === 'charge' && (e.note || '').includes('× ');
+  const extra = hadItems ? '\n\nPaalala: hindi awtomatikong maibabalik ang stock ng mga item. Kung ibinalik ng customer ang item, ayusin ang stock sa Paninda.' : '';
+  if(!confirm(`I-undo ang ${what} na ${pesoExact(e.amount)}?` + extra)) return;
   const { error } = await sb.from('utang_entries').insert({
     store_code: storeCode, customer_id: e.customer_id, type: 'reversal',
     amount: e.amount, reverses_id: e.id, note: myName ? `Undo (${myName})` : 'Undo'
