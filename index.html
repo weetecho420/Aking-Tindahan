@@ -127,6 +127,20 @@
   .more-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
   .more-btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:11px 8px;font-weight:800;font-size:14px;}
   .more-btn.alt{background:var(--card);color:var(--green);border:1px solid var(--green);font-weight:700;}
+  .pbox-click{text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%;}
+  .pbox-click:hover,.pbox-click:focus-visible{border-color:var(--green);}
+  .pbox-click .pbenta{color:var(--green);font-weight:700;}
+  #listOverlay{z-index:55;}
+  .list-modal{max-width:440px;max-height:88vh;overflow-y:auto;}
+  .list-search{width:100%;box-sizing:border-box;padding:9px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--paper);margin-bottom:6px;}
+  .lrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 2px;border-bottom:1px solid var(--border);font-size:14px;}
+  .lrow:last-child{border-bottom:none;}
+  .lname{min-width:0;}
+  .lname b{display:block;font-weight:700;overflow-wrap:anywhere;}
+  .lname span{font-size:12px;color:var(--ink-soft);}
+  .lstock{font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .lstock.low{color:var(--red);}
+  .lrestock{border:1px solid var(--mango);background:var(--mango-light);color:#8A5A0E;border-radius:8px;padding:6px 10px;font-weight:700;font-size:13px;white-space:nowrap;}
   .report-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 6px;}
   .report-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
   .report-title{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:16px;}
@@ -343,10 +357,10 @@
   <div class="report-card" id="stockSummary" style="display:none;">
     <div class="report-head"><span class="report-title">📦 Buod ng stock</span></div>
     <div class="period-grid">
-      <div class="pbox"><div class="plabel">Uri ng paninda</div><div class="pkita" style="color:var(--ink)" id="sumItems">0</div><div class="pbenta">items</div></div>
+      <button type="button" class="pbox pbox-click" id="openAllItems"><div class="plabel">Uri ng paninda</div><div class="pkita" style="color:var(--ink)" id="sumItems">0</div><div class="pbenta">Tingnan ang listahan ›</div></button>
       <div class="pbox"><div class="plabel">Kabuuang piraso</div><div class="pkita" style="color:var(--ink)" id="sumPieces">0</div><div class="pbenta">pcs sa tindahan</div></div>
       <div class="pbox"><div class="plabel">Halaga ng stock</div><div class="pkita" style="color:#B26F0E" id="sumValue">₱0</div><div class="pbenta" id="sumSellValue">Kung mabenta lahat: ₱0</div></div>
-      <div class="pbox"><div class="plabel">Kailangang i-restock</div><div class="pkita" style="color:var(--red)" id="sumLow">0</div><div class="pbenta" id="sumOut">0 ubos na</div></div>
+      <button type="button" class="pbox pbox-click" id="openRestock"><div class="plabel">Kailangang i-restock</div><div class="pkita" style="color:var(--red)" id="sumLow">0</div><div class="pbenta"><span id="sumOut">0 ubos na</span> · Tingnan ›</div></button>
     </div>
   </div>
 
@@ -539,6 +553,21 @@
 
 <footer><span id="footerText">Shared ang datos sa lahat ng naka-login sa tindahan mo.</span><br><button class="logout-link help-open" type="button">❓ Tulong</button> · <button class="logout-link" id="logoutBtn">Mag-logout</button></footer>
 
+<!-- ITEM LIST POPUP (from Buod ng stock) -->
+<div class="modal-overlay" id="listOverlay">
+  <div class="modal list-modal">
+    <div class="cust-head">
+      <h3 id="listTitle">Listahan</h3>
+      <button class="del-btn" id="listClose" style="opacity:0.8;font-size:20px;" aria-label="Isara">✕</button>
+    </div>
+    <div class="item-prices" id="listSub" style="margin:2px 0 8px;"></div>
+    <input type="text" id="listSearch" placeholder="🔍 Hanapin..." class="list-search">
+    <div id="listRows"></div>
+    <button type="button" class="share-main" id="listCopy" style="width:100%;margin-top:10px;display:none;">📋 Kopyahin ang listahan ng bibilhin</button>
+    <div class="item-prices" id="listStatus" style="margin-top:6px;text-align:center;"></div>
+  </div>
+</div>
+
 <!-- HELP / TULONG -->
 <div class="modal-overlay" id="helpOverlay">
   <div class="modal help-modal">
@@ -709,6 +738,69 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   localStorage.removeItem('tindahan-store-code');
   storeCode = null;
   showGate();
+});
+
+/* ---------- ITEM LIST POPUP (Buod ng stock) ---------- */
+let listMode = 'all';
+function lowItems(){
+  return items.filter(it => Number(it.stock) <= 3)
+    .sort((a,b) => Number(a.stock) - Number(b.stock) || a.name.localeCompare(b.name));
+}
+function renderList(){
+  const q = (document.getElementById('listSearch').value || '').trim().toLowerCase();
+  let rows = listMode === 'all'
+    ? [...items].sort((a,b) => a.name.localeCompare(b.name))
+    : lowItems();
+  if(q) rows = rows.filter(it => it.name.toLowerCase().includes(q));
+  const box = document.getElementById('listRows');
+  if(!rows.length){
+    box.innerHTML = '<div class="empty" style="padding:16px;">' + (listMode === 'all' ? 'Walang nahanap.' : 'Wala nang kailangang i-restock. 👍') + '</div>';
+    return;
+  }
+  box.innerHTML = rows.map(it => {
+    const st = Number(it.stock);
+    const low = st <= 3;
+    const stockText = st <= 0 ? 'Ubos na!' : (listMode === 'all' ? st.toLocaleString('en-PH') + ' pcs' : st + ' na lang');
+    const right = listMode === 'restock'
+      ? `<span class="lstock low">${stockText}</span><button type="button" class="lrestock" data-id="${it.id}">+ Restock</button>`
+      : `<span class="lstock ${low ? 'low' : ''}">${stockText}</span>`;
+    return `<div class="lrow"><div class="lname"><b>${escapeHtml(it.name)}</b><span>Benta ${peso(it.sell_price)} · Bili ${peso(it.buy_price)}</span></div><div style="display:flex;align-items:center;gap:8px;">${right}</div></div>`;
+  }).join('');
+  box.querySelectorAll('.lrestock').forEach(b => b.addEventListener('click', ()=>{
+    document.getElementById('listOverlay').classList.remove('open');
+    openQtyModal(b.dataset.id, 'restock');
+  }));
+}
+function openList(mode){
+  listMode = mode;
+  document.getElementById('listSearch').value = '';
+  document.getElementById('listStatus').textContent = '';
+  const low = lowItems();
+  if(mode === 'all'){
+    document.getElementById('listTitle').textContent = '📦 Lahat ng paninda';
+    document.getElementById('listSub').textContent = items.length.toLocaleString('en-PH') + ' item · A hanggang Z';
+  } else {
+    const out = low.filter(it => Number(it.stock) <= 0).length;
+    document.getElementById('listTitle').textContent = '⚠️ Kailangang i-restock';
+    document.getElementById('listSub').textContent = low.length + ' item · ' + out + ' ubos na · ' + (low.length - out) + ' mababa (3 o kulang)';
+  }
+  document.getElementById('listCopy').style.display = (mode === 'restock' && low.length) ? 'block' : 'none';
+  renderList();
+  document.getElementById('listOverlay').classList.add('open');
+}
+document.getElementById('openAllItems').addEventListener('click', ()=> openList('all'));
+document.getElementById('openRestock').addEventListener('click', ()=> openList('restock'));
+document.getElementById('listSearch').addEventListener('input', renderList);
+document.getElementById('listClose').addEventListener('click', ()=> document.getElementById('listOverlay').classList.remove('open'));
+document.getElementById('listOverlay').addEventListener('click', e=>{ if(e.target.id === 'listOverlay') e.currentTarget.classList.remove('open'); });
+document.getElementById('listCopy').addEventListener('click', async ()=>{
+  const status = document.getElementById('listStatus');
+  const today = new Date().toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' });
+  const text = ['Bibilhin para sa ' + STORE_DISPLAY_NAME + ' (' + today + '):']
+    .concat(lowItems().map(it => '- ' + it.name + (Number(it.stock) <= 0 ? ' (ubos na)' : ' (' + it.stock + ' na lang)')))
+    .join('\n');
+  try{ await navigator.clipboard.writeText(text); status.textContent = 'Nakopya ✓ I-paste sa Messenger o text.'; }
+  catch(err){ prompt('Kopyahin ang listahan:', text); }
 });
 
 /* ---------- SHARE THE APP ---------- */
