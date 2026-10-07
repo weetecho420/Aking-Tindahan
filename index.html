@@ -100,6 +100,25 @@
   .gate-hint{font-size:11px;color:var(--ink-soft);text-align:left;margin:-6px 0 10px;}
   .code-box{font-family:'Baloo 2',sans-serif;font-size:30px;font-weight:800;letter-spacing:0.06em;color:var(--green);background:var(--green-light);border:2px dashed var(--green);border-radius:12px;padding:10px 6px 4px;margin:4px 0 12px;word-break:break-all;}
 
+  .period-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .pbox{background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:8px 10px 6px;}
+  .plabel{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft);}
+  .pkita{font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;line-height:1.15;color:var(--green);font-variant-numeric:tabular-nums;}
+  .pbenta{font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+  header{position:relative;}
+  .help-btn{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.15);color:#F6EFDD;border:1px solid rgba(255,255,255,0.35);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;}
+  #helpOverlay{z-index:120;}
+  .help-modal{max-width:440px;max-height:90vh;overflow-y:auto;}
+  .help-code{background:var(--green-light);border:1px dashed var(--green);border-radius:10px;padding:8px 10px;font-size:14px;margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .help-code b{font-family:'Baloo 2',sans-serif;font-size:18px;color:var(--green);letter-spacing:0.04em;}
+  .faq{border:1px solid var(--border);border-radius:10px;margin-bottom:6px;background:var(--paper);}
+  .faq summary{cursor:pointer;padding:10px 12px;font-weight:700;font-size:14px;list-style:none;}
+  .faq summary::-webkit-details-marker{display:none;}
+  .faq summary::after{content:'＋';float:right;color:var(--ink-soft);}
+  .faq[open] summary::after{content:'−';}
+  .faq p{margin:0;padding:0 12px 12px;font-size:14px;line-height:1.5;color:var(--ink);}
+  .help-contact{margin-top:12px;border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;}
+  .help-contact textarea{width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid var(--border);font:inherit;font-size:14px;background:var(--paper);resize:vertical;}
   .report-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 6px;}
   .report-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
   .report-title{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:16px;}
@@ -219,10 +238,12 @@
       <button id="doneCopy" class="cancel-btn" style="background:var(--card);color:var(--green);border:1px solid var(--green) !important;margin-bottom:8px;">Kopyahin ang code</button>
       <button id="doneGo">Simulan na</button>
     </div>
+    <button class="gate-link help-open" type="button">❓ May problema? <b>Tulong</b></button>
   </div>
 </div>
 
 <header>
+  <button class="help-btn help-open" type="button" aria-label="Tulong">❓ Tulong</button>
   <h1 id="storeTitle">Aking Tindahan</h1>
   <p>Store tracker — kita, benta, at stock</p>
   <p id="lastUpdated"></p>
@@ -244,6 +265,17 @@
     <div class="stat"><div class="label">Total benta (sales)</div><div class="value" id="stat-revenue">₱0</div></div>
     <div class="stat"><div class="label">Puhunan (invested)</div><div class="value" id="stat-invested">₱0</div></div>
     <div class="stat stockval"><div class="label">Stock value ngayon</div><div class="value" id="stat-stockvalue">₱0</div></div>
+  </div>
+
+  <!-- KITA BY PERIOD -->
+  <div class="report-card">
+    <div class="report-head"><span class="report-title">💰 Kita</span><span class="report-note" style="margin:0">oras sa Pilipinas</span></div>
+    <div class="period-grid">
+      <div class="pbox"><div class="plabel">Ngayong araw</div><div class="pkita" id="kitaDay">₱0</div><div class="pbenta" id="bentaDay">Benta ₱0</div></div>
+      <div class="pbox"><div class="plabel">Ngayong linggo</div><div class="pkita" id="kitaWeek">₱0</div><div class="pbenta" id="bentaWeek">Benta ₱0</div></div>
+      <div class="pbox"><div class="plabel">Ngayong buwan</div><div class="pkita" id="kitaMonth">₱0</div><div class="pbenta" id="bentaMonth">Benta ₱0</div></div>
+      <div class="pbox"><div class="plabel">Ngayong taon</div><div class="pkita" id="kitaYear">₱0</div><div class="pbenta" id="bentaYear">Benta ₱0</div></div>
+    </div>
   </div>
 
   <!-- SALES REPORT: best sellers and slow sellers -->
@@ -475,7 +507,62 @@
   </div>
 </div>
 
-<footer><span id="footerText">Shared ang datos sa lahat ng naka-login sa tindahan mo.</span><br><button class="logout-link" id="logoutBtn">Mag-logout</button></footer>
+<footer><span id="footerText">Shared ang datos sa lahat ng naka-login sa tindahan mo.</span><br><button class="logout-link help-open" type="button">❓ Tulong</button> · <button class="logout-link" id="logoutBtn">Mag-logout</button></footer>
+
+<!-- HELP / TULONG -->
+<div class="modal-overlay" id="helpOverlay">
+  <div class="modal help-modal">
+    <div class="cust-head">
+      <h3>❓ Tulong</h3>
+      <button class="del-btn" id="helpClose" style="opacity:0.8;font-size:20px;" aria-label="Isara">✕</button>
+    </div>
+    <div class="help-code" id="helpCodeBox" style="display:none;">
+      Store code mo: <b id="helpCode"></b>
+      <button type="button" class="undo-btn" id="helpCodeCopy">Kopyahin</button>
+    </div>
+    <p class="item-prices" style="margin:6px 0 10px;">Pindutin ang problema mo para makita ang sagot.</p>
+
+    <details class="faq"><summary>Nakalimutan ko ang store code</summary>
+      <p>Kung naka-login pa ang ibang cellphone (hal. kay misis o staff), buksan ang <b>❓ Tulong</b> doon. Nakasulat sa itaas ang store code. Kung wala nang naka-login, mag-message sa amin sa ibaba at hahanapin namin ito gamit ang pangalan ng tindahan mo.</p></details>
+
+    <details class="faq"><summary>Nakalimutan ko ang PIN</summary>
+      <p>Para sa seguridad, hindi namin makikita ang PIN mo. Pero <b>mapapalitan namin ito</b>. Mag-message sa amin sa ibaba kasama ang store code at pangalan ng tindahan. Hindi mawawala ang datos mo.</p></details>
+
+    <details class="faq"><summary>Paano isasali si misis o ang staff?</summary>
+      <p>Ibigay sa kanila ang <b>store code</b> at <b>PIN</b>. Sa cellphone nila, buksan ang app → <b>Mag-login</b> → ilagay ang code, PIN, at <b>sariling pangalan</b> nila. Makikita mo sa Kasaysayan kung sino ang nag-benta o nag-restock.</p></details>
+
+    <details class="faq"><summary>Mali ang na-benta o na-restock ko</summary>
+      <p>Hindi pa ito maa-undo sa app. Mag-message sa amin kung anong item, ilan, at kailan, at aayusin namin. Para maiwasan: tingnang mabuti ang bilang bago pindutin ang <b>Confirm</b>.</p></details>
+
+    <details class="faq"><summary>Mali ang presyo ng item</summary>
+      <p>Hindi pa mapapalitan ang presyo sa app. Mag-message sa amin kasama ang item at tamang presyo, at aayusin namin agad.</p></details>
+
+    <details class="faq"><summary>Hindi gumagana ang 📷 Scan</summary>
+      <p>1. Payagan ang camera kapag nagtanong ang cellphone (<b>Allow</b>).<br>2. Itapat sa barcode sa maliwanag na lugar, mga isang dangkal ang layo.<br>3. Kung ayaw pa rin, i-type na lang ang barcode sa <b>+ Item</b>, o iwanang blangko.</p></details>
+
+    <details class="faq"><summary>Hindi nagbubukas ang text sa 📩 Paalala</summary>
+      <p>Kailangan may <b>cellphone number</b> ang customer. Kung wala, kinokopya ng app ang mensahe, at puwede mo itong i-paste sa Messenger. Mas gumagana ito sa cellphone kaysa sa computer.</p></details>
+
+    <details class="faq"><summary>Tapos na ang free trial / hindi na makapag-save</summary>
+      <p>Pindutin ang <b>Magbayad</b> sa dilaw o pulang banner sa itaas. Puwede ang GCash, Maya, MariBank (QR Ph) o card. Automatic na babalik ang app pagkabayad. <b>Hindi nabubura ang datos mo</b> habang hindi pa bayad, nakikita mo pa rin ito.</p></details>
+
+    <details class="faq"><summary>Paano ilalagay sa home screen ng cellphone?</summary>
+      <p><b>Android (Chrome):</b> buksan ang app → pindutin ang <b>⋮</b> sa itaas → <b>Add to Home screen</b>.<br><b>iPhone (Safari):</b> pindutin ang <b>Share</b> (kahon na may arrow) → <b>Add to Home Screen</b>.</p></details>
+
+    <details class="faq"><summary>Ligtas ba ang datos ko?</summary>
+      <p>Oo. Nakatago ang datos online, at <b>ang may store code at PIN lang</b> ang makakakita. Hindi makikita ng ibang tindahan ang benta, kita, o utang mo. Kahit masira o mawala ang cellphone, nandoon pa rin ang datos. Mag-login lang sa bagong cellphone.</p></details>
+
+    <details class="faq"><summary>Hindi nag-a-update ang numero</summary>
+      <p>Pindutin ang <b>↻</b> sa tabi ng "Mga paninda". Kung wala pa rin, isara at buksan ulit ang app. Kailangan may internet (data o WiFi).</p></details>
+
+    <div class="help-contact">
+      <div class="report-title" style="font-size:15px;">Hindi pa rin naayos? Mag-message sa amin</div>
+      <textarea id="helpMsg" rows="3" placeholder="Ano ang problema? (hal. Nakalimutan ko ang PIN)"></textarea>
+      <button type="button" class="save-btn" id="helpSend" style="width:100%;padding:11px;border-radius:8px;font-weight:700;">📋 Kopyahin ang mensahe</button>
+      <div class="item-prices" id="helpHow" style="margin-top:6px;"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ============================================================
@@ -492,6 +579,8 @@ const MONTHLY_PRICE = 185;                         // ₱ per month
 const YEARLY_PRICE = 1850;                         // ₱ per year (2 months free)
 const PAYMENT_GCASH = '09XX XXX XXXX (Henry B.)';  // ← put your GCash number + name
 const PAYMENT_CONTACT = 'Facebook: XeraDC';        // ← where owners send the receipt
+const SUPPORT_PAGE_NAME = 'Aking Tindahan';        // ← your Facebook Page name (for help messages)
+const SUPPORT_MESSENGER_LINK = '';                 // ← optional: e.g. 'https://m.me/YourPageUsername'
 
 /* ============================================================
    2. STATE
@@ -589,6 +678,42 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   localStorage.removeItem('tindahan-store-code');
   storeCode = null;
   showGate();
+});
+
+/* ---------- HELP / TULONG ---------- */
+function openHelp(){
+  const box = document.getElementById('helpCodeBox');
+  if(storeCode){ document.getElementById('helpCode').textContent = storeCode; box.style.display = 'flex'; }
+  else box.style.display = 'none';
+  document.getElementById('helpHow').textContent = '';
+  document.getElementById('helpOverlay').classList.add('open');
+}
+document.querySelectorAll('.help-open').forEach(b => b.addEventListener('click', openHelp));
+document.getElementById('helpClose').addEventListener('click', ()=> document.getElementById('helpOverlay').classList.remove('open'));
+document.getElementById('helpOverlay').addEventListener('click', e=>{ if(e.target.id === 'helpOverlay') e.currentTarget.classList.remove('open'); });
+document.getElementById('helpCodeCopy').addEventListener('click', async e=>{
+  try{ await navigator.clipboard.writeText(storeCode); e.target.textContent = 'Nakopya ✓'; }catch(err){ e.target.textContent = 'I-screenshot na lang'; }
+});
+document.getElementById('helpSend').addEventListener('click', async ()=>{
+  const how = document.getElementById('helpHow');
+  const problem = document.getElementById('helpMsg').value.trim();
+  if(problem.length < 3){ how.textContent = 'Isulat muna ang problema mo.'; return; }
+  const lines = [
+    'Tulong po sa Aking Tindahan app.',
+    'Problema: ' + problem,
+    'Store code: ' + (storeCode || '(hindi alam)'),
+    'Tindahan: ' + (storeCode ? STORE_DISPLAY_NAME : '(hindi alam)'),
+    'Pangalan: ' + (myName || '(hindi alam)')
+  ];
+  const msg = lines.join('\n');
+  let copied = false;
+  try{ await navigator.clipboard.writeText(msg); copied = true; }catch(err){}
+  if(copied){
+    how.innerHTML = 'Nakopya na ✓ I-paste sa Messenger ng Facebook Page na <b>' + escapeHtml(SUPPORT_PAGE_NAME) + '</b>.'
+      + (SUPPORT_MESSENGER_LINK ? ' <a href="' + SUPPORT_MESSENGER_LINK + '" target="_blank" rel="noopener">Buksan ang Messenger</a>' : '');
+  } else {
+    prompt('Kopyahin ang mensahe at i-send sa Facebook Page na ' + SUPPORT_PAGE_NAME + ':', msg);
+  }
 });
 
 /* ---------- SIGN-UP ---------- */
@@ -853,6 +978,20 @@ async function refreshAll(){
   await Promise.all([loadItems(), loadLog(), loadTotals()]);
   render();
   loadReport();
+  loadPeriods();
+}
+
+/* ---------- KITA: today, this week, this month, this year (PH time) ---------- */
+async function loadPeriods(){
+  const { data, error } = await sb.rpc('profit_by_period', { p_store_code: storeCode });
+  if(error){ console.error(error); return; }
+  const ids = { day: 'Day', week: 'Week', month: 'Month', year: 'Year' };
+  (data || []).forEach(r => {
+    const k = ids[r.period];
+    if(!k) return;
+    document.getElementById('kita' + k).textContent = peso(Number(r.profit));
+    document.getElementById('benta' + k).textContent = 'Benta ' + peso(Number(r.revenue));
+  });
 }
 
 /* ---------- SALES REPORT: mabenta at mahina ang benta ---------- */
