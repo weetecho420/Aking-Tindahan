@@ -123,6 +123,10 @@
   .share-row{display:grid;grid-template-columns:1.3fr 1fr;gap:8px;}
   .share-main{background:var(--green);color:#fff;border:none;border-radius:10px;padding:11px 8px;font-weight:800;font-size:14px;}
   .share-alt{background:var(--card);color:var(--green);border:1px solid var(--green);border-radius:10px;padding:11px 8px;font-weight:700;font-size:13px;}
+  .more-box{display:flex;flex-direction:column;gap:8px;align-items:stretch;text-align:center;margin:4px 0 14px;}
+  .more-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .more-btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:11px 8px;font-weight:800;font-size:14px;}
+  .more-btn.alt{background:var(--card);color:var(--green);border:1px solid var(--green);font-weight:700;}
   .report-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 6px;}
   .report-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
   .report-title{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:16px;}
@@ -612,6 +616,7 @@ const SUPPORT_MESSENGER_LINK = '';                 // ← optional: e.g. 'https:
    2. STATE
    ============================================================ */
 let items = [];
+let itemsShown = 10;   // how many paninda cards to show (10 at a time)
 let activityLog = [];
 let totals = { revenue: 0, profit: 0, invested: 0 };
 let storeCode = localStorage.getItem('tindahan-store-code') || null;
@@ -1145,7 +1150,9 @@ function render(){
       noResults.style.display = 'block';
     } else {
       noResults.style.display = 'none';
-      filtered.forEach(it=>{
+      // Show 10 at a time so the page isn't too long to scroll
+      const visible = filtered.slice(0, itemsShown);
+      visible.forEach(it=>{
         const div = document.createElement('div');
         div.className = 'item';
         const lowStock = it.stock <= 3;
@@ -1166,6 +1173,28 @@ function render(){
           </div>`;
         list.appendChild(div);
       });
+      if(filtered.length > visible.length){
+        const more = document.createElement('div');
+        more.className = 'more-box';
+        const left = filtered.length - visible.length;
+        more.innerHTML = `<div class="item-prices">Ipinapakita ang ${visible.length} sa ${filtered.length} item · gamitin ang 🔍 para mabilis mahanap</div>
+          <div class="more-row">
+            <button type="button" class="more-btn" id="showMore">Ipakita pa ang ${Math.min(10, left)} ↓</button>
+            <button type="button" class="more-btn alt" id="showAll">Ipakita lahat (${filtered.length})</button>
+          </div>`;
+        list.appendChild(more);
+        more.querySelector('#showMore').addEventListener('click', ()=>{ itemsShown += 10; render(); });
+        more.querySelector('#showAll').addEventListener('click', ()=>{ itemsShown = filtered.length; render(); });
+      } else if(filtered.length > 10){
+        const less = document.createElement('div');
+        less.className = 'more-box';
+        less.innerHTML = `<button type="button" class="more-btn alt" id="showLess">Itago, 10 lang ang ipakita ↑</button>`;
+        list.appendChild(less);
+        less.querySelector('#showLess').addEventListener('click', ()=>{
+          itemsShown = 10; render();
+          document.getElementById('searchBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
       list.querySelectorAll('.del-btn').forEach(btn=> btn.addEventListener('click', ()=> deleteItem(btn.dataset.id)));
       list.querySelectorAll('.action-btn').forEach(btn=> btn.addEventListener('click', ()=> openQtyModal(btn.dataset.id, btn.dataset.mode)));
     }
@@ -1242,7 +1271,7 @@ document.getElementById('qtyConfirm').addEventListener('click', async ()=>{
 document.getElementById('refreshBtn').addEventListener('click', refreshAll);
 document.getElementById('toggleFormBtn').addEventListener('click', ()=> document.getElementById('addForm').classList.toggle('open'));
 document.getElementById('cancelAdd').addEventListener('click', ()=>{ document.getElementById('addForm').classList.remove('open'); clearForm(); });
-document.getElementById('searchBox').addEventListener('input', render);
+document.getElementById('searchBox').addEventListener('input', ()=>{ itemsShown = 10; render(); });
 
 function clearForm(){
   document.getElementById('newName').value = '';
