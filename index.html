@@ -119,6 +119,10 @@
   .faq p{margin:0;padding:0 12px 12px;font-size:14px;line-height:1.5;color:var(--ink);}
   .help-contact{margin-top:12px;border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;}
   .help-contact textarea{width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid var(--border);font:inherit;font-size:14px;background:var(--paper);resize:vertical;}
+  .share-card{background:var(--green-light);border:1px solid var(--green);border-radius:12px;padding:14px;margin:18px 0 6px;}
+  .share-row{display:grid;grid-template-columns:1.3fr 1fr;gap:8px;}
+  .share-main{background:var(--green);color:#fff;border:none;border-radius:10px;padding:11px 8px;font-weight:800;font-size:14px;}
+  .share-alt{background:var(--card);color:var(--green);border:1px solid var(--green);border-radius:10px;padding:11px 8px;font-weight:700;font-size:13px;}
   .report-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 6px;}
   .report-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
   .report-title{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:16px;}
@@ -331,6 +335,17 @@
   <div class="empty" id="emptyState" style="display:none;">Wala pang item. Idagdag o i-scan ang una mong paninda.</div>
   <div class="empty" id="noResults" style="display:none;">Walang nahanap na item.</div>
 
+  <!-- STOCK SUMMARY -->
+  <div class="report-card" id="stockSummary" style="display:none;">
+    <div class="report-head"><span class="report-title">📦 Buod ng stock</span></div>
+    <div class="period-grid">
+      <div class="pbox"><div class="plabel">Uri ng paninda</div><div class="pkita" style="color:var(--ink)" id="sumItems">0</div><div class="pbenta">items</div></div>
+      <div class="pbox"><div class="plabel">Kabuuang piraso</div><div class="pkita" style="color:var(--ink)" id="sumPieces">0</div><div class="pbenta">pcs sa tindahan</div></div>
+      <div class="pbox"><div class="plabel">Halaga ng stock</div><div class="pkita" style="color:#B26F0E" id="sumValue">₱0</div><div class="pbenta" id="sumSellValue">Kung mabenta lahat: ₱0</div></div>
+      <div class="pbox"><div class="plabel">Kailangang i-restock</div><div class="pkita" style="color:var(--red)" id="sumLow">0</div><div class="pbenta" id="sumOut">0 ubos na</div></div>
+    </div>
+  </div>
+
   <div class="section-title">Kasaysayan</div>
   <div id="activityList"></div>
   <div class="empty" id="activityEmpty" style="display:none;">Wala pang aktibidad.</div>
@@ -386,6 +401,17 @@
       <div class="item-prices" id="qrStatus" style="margin-top:6px;"></div>
     </div>
   </div><!-- /viewUtang -->
+
+  <!-- SHARE THE APP -->
+  <div class="share-card">
+    <div class="report-title">👥 May kaibigang may tindahan?</div>
+    <div class="item-prices" style="margin:2px 0 10px;">I-share ang Aking Tindahan. Libre ang unang 30 araw para sa kanila.</div>
+    <div class="share-row">
+      <button type="button" class="share-main" id="shareApp">📤 I-share ang app</button>
+      <button type="button" class="share-alt" id="shareCopy">🔗 Kopyahin ang link</button>
+    </div>
+    <div class="item-prices" id="shareStatus" style="margin-top:6px;"></div>
+  </div>
 
 </div>
 
@@ -678,6 +704,31 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   localStorage.removeItem('tindahan-store-code');
   storeCode = null;
   showGate();
+});
+
+/* ---------- SHARE THE APP ---------- */
+const SHARE_URL = 'https://aking-tindahan-dixx.vercel.app';
+const SHARE_TEXT = 'Gamit ko ang Aking Tindahan para sa lista ng utang, benta at stock ng tindahan. Nasa cellphone lang, at LIBRE ang unang 30 araw! Subukan mo:';
+document.getElementById('shareApp').addEventListener('click', async ()=>{
+  const status = document.getElementById('shareStatus');
+  if(navigator.share){
+    try{
+      await navigator.share({ title: 'Aking Tindahan', text: SHARE_TEXT, url: SHARE_URL });
+      status.textContent = 'Salamat sa pag-share! 💚';
+    }catch(err){ /* closed the share menu, nothing to do */ }
+    return;
+  }
+  // Computers without a share menu: open Facebook sharing in a new tab
+  window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(SHARE_URL), '_blank', 'noopener');
+});
+document.getElementById('shareCopy').addEventListener('click', async ()=>{
+  const status = document.getElementById('shareStatus');
+  try{
+    await navigator.clipboard.writeText(SHARE_TEXT + ' ' + SHARE_URL);
+    status.textContent = 'Nakopya ✓ I-paste sa Messenger, Viber o text.';
+  }catch(err){
+    prompt('Kopyahin at i-send sa kaibigan:', SHARE_TEXT + ' ' + SHARE_URL);
+  }
 });
 
 /* ---------- HELP / TULONG ---------- */
@@ -1059,6 +1110,22 @@ function render(){
   document.getElementById('stat-invested').textContent = peso(totals.invested);
   const stockValue = items.reduce((sum,it)=> sum + it.buy_price*it.stock, 0);
   document.getElementById('stat-stockvalue').textContent = peso(stockValue);
+
+  // Stock summary at the bottom of the list
+  const sumBox = document.getElementById('stockSummary');
+  sumBox.style.display = items.length ? 'block' : 'none';
+  if(items.length){
+    const pieces = items.reduce((n,it)=> n + Math.max(0, Number(it.stock)), 0);
+    const sellValue = items.reduce((n,it)=> n + Number(it.sell_price) * Math.max(0, Number(it.stock)), 0);
+    const outCount = items.filter(it => Number(it.stock) <= 0).length;
+    const lowCount = items.filter(it => Number(it.stock) <= 3).length;
+    document.getElementById('sumItems').textContent = items.length.toLocaleString('en-PH');
+    document.getElementById('sumPieces').textContent = pieces.toLocaleString('en-PH');
+    document.getElementById('sumValue').textContent = peso(stockValue);
+    document.getElementById('sumSellValue').textContent = 'Kung mabenta lahat: ' + peso(sellValue);
+    document.getElementById('sumLow').textContent = lowCount.toLocaleString('en-PH');
+    document.getElementById('sumOut').textContent = outCount + ' ubos na · ' + (lowCount - outCount) + ' mababa';
+  }
 
   const list = document.getElementById('itemList');
   const empty = document.getElementById('emptyState');
