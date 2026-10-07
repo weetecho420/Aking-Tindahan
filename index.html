@@ -100,6 +100,23 @@
   .gate-hint{font-size:11px;color:var(--ink-soft);text-align:left;margin:-6px 0 10px;}
   .code-box{font-family:'Baloo 2',sans-serif;font-size:30px;font-weight:800;letter-spacing:0.06em;color:var(--green);background:var(--green-light);border:2px dashed var(--green);border-radius:12px;padding:10px 6px 4px;margin:4px 0 12px;word-break:break-all;}
 
+  .report-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 6px;}
+  .report-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
+  .report-title{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:16px;}
+  .period{display:inline-flex;background:var(--paper);border:1px solid var(--border);border-radius:9px;padding:2px;}
+  .period-btn{border:none;background:none;border-radius:7px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .period-btn.active{background:var(--green);color:#fff;}
+  .report-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+  .report-col{min-width:0;}
+  .report-sub{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;}
+  .report-sub.good{color:var(--green);} .report-sub.slow{color:var(--red);}
+  .rep-row{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border);}
+  .rep-row:last-child{border-bottom:none;}
+  .rep-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rep-val{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .rep-val.good{color:var(--green);} .rep-val.slow{color:var(--red);}
+  .rep-empty{font-size:12px;color:var(--ink-soft);padding:4px 0;}
+  .report-note{font-size:11px;color:var(--ink-soft);margin-top:8px;}
   .trial-banner{margin-top:14px;border-radius:12px;padding:10px 14px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .trial-banner.ok{background:var(--mango-light);border:1px solid var(--mango);color:#8A5A0E;}
   .trial-banner.expired{background:var(--red-light);border:1px solid var(--red);color:var(--red);}
@@ -227,6 +244,28 @@
     <div class="stat"><div class="label">Total benta (sales)</div><div class="value" id="stat-revenue">₱0</div></div>
     <div class="stat"><div class="label">Puhunan (invested)</div><div class="value" id="stat-invested">₱0</div></div>
     <div class="stat stockval"><div class="label">Stock value ngayon</div><div class="value" id="stat-stockvalue">₱0</div></div>
+  </div>
+
+  <!-- SALES REPORT: best sellers and slow sellers -->
+  <div class="report-card">
+    <div class="report-head">
+      <span class="report-title">📊 Ulat ng benta</span>
+      <div class="period" role="group" aria-label="Panahon">
+        <button type="button" class="period-btn" data-days="7">7 araw</button>
+        <button type="button" class="period-btn active" data-days="30">30 araw</button>
+      </div>
+    </div>
+    <div class="report-cols">
+      <div class="report-col">
+        <div class="report-sub good">🔥 Mabenta</div>
+        <div id="reportTop"></div>
+      </div>
+      <div class="report-col">
+        <div class="report-sub slow">🐢 Mahina ang benta</div>
+        <div id="reportSlow"></div>
+      </div>
+    </div>
+    <div class="report-note" id="reportNote"></div>
   </div>
 
   <div class="section-title">
@@ -813,7 +852,43 @@ async function loadTotals(){
 async function refreshAll(){
   await Promise.all([loadItems(), loadLog(), loadTotals()]);
   render();
+  loadReport();
 }
+
+/* ---------- SALES REPORT: mabenta at mahina ang benta ---------- */
+let reportDays = 30;
+async function loadReport(){
+  const { data, error } = await sb.rpc('item_sales_report', { p_store_code: storeCode, p_days: reportDays });
+  if(error){ console.error(error); return; }
+  renderReport(data || []);
+}
+function renderReport(rows){
+  const fmtQty = n => Number(n).toLocaleString('en-PH');
+  const top = rows.filter(r => Number(r.qty_sold) > 0)
+    .sort((a,b) => Number(b.qty_sold) - Number(a.qty_sold)).slice(0, 5);
+  // Slow sellers: still in stock, in the store at least 7 days, sold the least.
+  // Ties go to the item with the most money sitting on the shelf.
+  const slow = rows.filter(r => Number(r.stock) > 0 && Number(r.item_age_days) >= 7)
+    .sort((a,b) => (Number(a.qty_sold) - Number(b.qty_sold)) || (b.stock*b.buy_price - a.stock*a.buy_price))
+    .slice(0, 5);
+
+  document.getElementById('reportTop').innerHTML = top.length
+    ? top.map(r => `<div class="rep-row"><span class="rep-name">${escapeHtml(r.name)}</span><span class="rep-val good">${fmtQty(r.qty_sold)} benta</span></div>`).join('')
+    : '<div class="rep-empty">Wala pang benta sa panahong ito.</div>';
+  document.getElementById('reportSlow').innerHTML = slow.length
+    ? slow.map(r => `<div class="rep-row"><span class="rep-name">${escapeHtml(r.name)}</span><span class="rep-val slow">${fmtQty(r.qty_sold)} benta</span></div>`).join('')
+    : '<div class="rep-empty">Wala pang sapat na datos.</div>';
+
+  const stuck = slow.filter(r => Number(r.qty_sold) === 0).reduce((s, r) => s + Number(r.stock) * Number(r.buy_price), 0);
+  document.getElementById('reportNote').textContent = stuck > 0
+    ? `Huling ${reportDays} araw · May ${peso(stuck)} na puhunan na nakatambak sa mga hindi nabebentang item. Subukang i-promo o huwag munang mag-restock.`
+    : `Huling ${reportDays} araw · Mabenta = i-restock agad. Mahina = bawasan ang order.`;
+}
+document.querySelectorAll('.period-btn').forEach(b => b.addEventListener('click', ()=>{
+  reportDays = Number(b.dataset.days);
+  document.querySelectorAll('.period-btn').forEach(x => x.classList.toggle('active', x === b));
+  loadReport();
+}));
 
 async function logActivity(action, itemName, qty, revenue=0, profit=0, invested=0){
   await sb.from('activity_log').insert({
@@ -1361,4 +1436,3 @@ checkGate();
 
 </body>
 </html>
-
