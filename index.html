@@ -261,7 +261,7 @@
         <div id="reportTop"></div>
       </div>
       <div class="report-col">
-        <div class="report-sub slow">🐢 Mahina ang benta</div>
+        <div class="report-sub slow">⚠️ Paubos na</div>
         <div id="reportSlow"></div>
       </div>
     </div>
@@ -866,23 +866,30 @@ function renderReport(rows){
   const fmtQty = n => Number(n).toLocaleString('en-PH');
   const top = rows.filter(r => Number(r.qty_sold) > 0)
     .sort((a,b) => Number(b.qty_sold) - Number(a.qty_sold)).slice(0, 5);
-  // Slow sellers: still in stock, in the store at least 7 days, sold the least.
-  // Ties go to the item with the most money sitting on the shelf.
-  const slow = rows.filter(r => Number(r.stock) > 0 && Number(r.item_age_days) >= 7)
-    .sort((a,b) => (Number(a.qty_sold) - Number(b.qty_sold)) || (b.stock*b.buy_price - a.stock*a.buy_price))
-    .slice(0, 5);
+  // Paubos na: 3 or fewer left, or selling fast enough to run out within 7 days.
+  // Out of stock first, then whatever runs out soonest.
+  const perDay = r => Number(r.qty_sold) / reportDays;
+  const daysLeft = r => perDay(r) > 0 ? Number(r.stock) / perDay(r) : Infinity;
+  const low = rows.filter(r => Number(r.stock) <= 3 || daysLeft(r) <= 7)
+    .sort((a,b) => (Number(a.stock) === 0 ? 0 : 1) - (Number(b.stock) === 0 ? 0 : 1)
+                   || daysLeft(a) - daysLeft(b) || Number(a.stock) - Number(b.stock));
+  const lowShown = low.slice(0, 6);
 
   document.getElementById('reportTop').innerHTML = top.length
     ? top.map(r => `<div class="rep-row"><span class="rep-name">${escapeHtml(r.name)}</span><span class="rep-val good">${fmtQty(r.qty_sold)} benta</span></div>`).join('')
     : '<div class="rep-empty">Wala pang benta sa panahong ito.</div>';
-  document.getElementById('reportSlow').innerHTML = slow.length
-    ? slow.map(r => `<div class="rep-row"><span class="rep-name">${escapeHtml(r.name)}</span><span class="rep-val slow">${fmtQty(r.qty_sold)} benta</span></div>`).join('')
-    : '<div class="rep-empty">Wala pang sapat na datos.</div>';
+  document.getElementById('reportSlow').innerHTML = lowShown.length
+    ? lowShown.map(r => {
+        const st = Number(r.stock);
+        const label = st === 0 ? 'Ubos na!' : `${fmtQty(st)} na lang`;
+        return `<div class="rep-row"><span class="rep-name">${escapeHtml(r.name)}</span><span class="rep-val slow">${label}</span></div>`;
+      }).join('')
+    : '<div class="rep-empty">Wala pang paubos. 👍</div>';
 
-  const stuck = slow.filter(r => Number(r.qty_sold) === 0).reduce((s, r) => s + Number(r.stock) * Number(r.buy_price), 0);
-  document.getElementById('reportNote').textContent = stuck > 0
-    ? `Huling ${reportDays} araw · May ${peso(stuck)} na puhunan na nakatambak sa mga hindi nabebentang item. Subukang i-promo o huwag munang mag-restock.`
-    : `Huling ${reportDays} araw · Mabenta = i-restock agad. Mahina = bawasan ang order.`;
+  const outCount = low.filter(r => Number(r.stock) === 0).length;
+  document.getElementById('reportNote').textContent = low.length
+    ? `Huling ${reportDays} araw · ${low.length} item ang kailangang i-restock` + (outCount ? ` (${outCount} ubos na)` : '') + (low.length > lowShown.length ? '. Makikita ang iba sa listahan sa ibaba.' : '.')
+    : `Huling ${reportDays} araw · Sapat pa ang stock ng lahat. 👍`;
 }
 document.querySelectorAll('.period-btn').forEach(b => b.addEventListener('click', ()=>{
   reportDays = Number(b.dataset.days);
