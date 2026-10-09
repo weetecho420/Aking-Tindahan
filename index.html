@@ -166,6 +166,26 @@
   .period{display:inline-flex;background:var(--paper);border:1px solid var(--border);border-radius:9px;padding:2px;}
   .period-btn{border:none;background:none;border-radius:7px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--ink-soft);}
   .period-btn.active{background:var(--green);color:#fff;}
+  .kaha-btn{border:none;background:none;border-radius:7px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .kaha-btn.active{background:var(--green);color:#fff;}
+  .kaha-total{display:flex;justify-content:space-between;align-items:baseline;gap:8px;background:var(--green-light);border:1px solid var(--green);border-radius:10px;padding:8px 12px 4px;margin-bottom:6px;}
+  .kaha-total span{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--green);}
+  .kaha-total b{font-family:'Baloo 2',sans-serif;font-size:28px;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums;}
+  .kaha-rows .krow{display:flex;justify-content:space-between;gap:8px;padding:5px 2px;border-bottom:1px dashed var(--border);font-size:13px;}
+  .kaha-rows .krow:last-child{border-bottom:none;}
+  .krow small{display:block;font-size:11px;color:var(--ink-soft);}
+  .krow b{white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .krow b.minus{color:var(--red);}
+  .kaha-ewallet{font-size:12px;color:var(--ink-soft);background:var(--paper);border-radius:8px;padding:6px 10px;margin-top:6px;}
+  .kaha-count{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;font-weight:700;flex-wrap:wrap;}
+  .kaha-count input{flex:1;min-width:110px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--paper);}
+  #kahaDiff{font-weight:800;}
+  .kaha-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}
+  .kaha-add{border:1px solid var(--border);background:var(--paper);border-radius:9px;padding:8px 4px;font-size:13px;font-weight:700;color:var(--ink);}
+  .kaha-add[data-kind=expense]{color:var(--red);}
+  .kaha-add[data-kind=start],.kaha-add[data-kind=cash_in]{color:var(--green);}
+  #kahaList .kitem{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft);padding:4px 2px;}
+  #kahaList .kitem button{background:none;border:none;color:var(--ink-soft);font-size:14px;padding:0 4px;}
   .report-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
   .report-col{min-width:0;}
   .report-sub{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;}
@@ -339,6 +359,31 @@
       <button type="button" class="pbox pbox-click kita-open" data-period="month"><div class="plabel">Ngayong buwan</div><div class="pkita" id="kitaMonth">₱0</div><div class="pbenta" id="bentaMonth">Benta ₱0</div><div class="pmore">Tingnan ang nabenta ›</div></button>
       <button type="button" class="pbox pbox-click kita-open" data-period="year"><div class="plabel">Ngayong taon</div><div class="pkita" id="kitaYear">₱0</div><div class="pbenta" id="bentaYear">Benta ₱0</div><div class="pmore">Tingnan ang nabenta ›</div></button>
     </div>
+  </div>
+
+  <!-- KAHA: cash na dapat nasa kaha -->
+  <div class="report-card" id="kahaCard">
+    <div class="report-head">
+      <span class="report-title">💵 Kaha</span>
+      <div class="period" role="group" aria-label="Araw">
+        <button type="button" class="kaha-btn active" data-ago="0">Ngayon</button>
+        <button type="button" class="kaha-btn" data-ago="1">Kahapon</button>
+      </div>
+    </div>
+    <div class="kaha-total"><span>Dapat nasa kaha</span><b id="kahaTotal">₱0</b></div>
+    <div id="kahaRows" class="kaha-rows"></div>
+    <div id="kahaEwallet" class="kaha-ewallet" style="display:none;"></div>
+    <div class="kaha-count">
+      <label for="kahaCount">Binilang mo:</label>
+      <input type="number" id="kahaCount" inputmode="decimal" placeholder="₱ laman ng kaha">
+      <span id="kahaDiff"></span>
+    </div>
+    <div class="kaha-actions" id="kahaActions">
+      <button type="button" class="kaha-add" data-kind="start">+ Panimula</button>
+      <button type="button" class="kaha-add" data-kind="expense">− Gastos</button>
+      <button type="button" class="kaha-add" data-kind="cash_in">+ Dagdag</button>
+    </div>
+    <div id="kahaList"></div>
   </div>
 
   <!-- SALES REPORT: best sellers and slow sellers -->
@@ -602,6 +647,20 @@
 </div>
 
 <footer><span id="footerText">Shared ang datos sa lahat ng naka-login sa tindahan mo.</span><br><button class="logout-link help-open" type="button">❓ Tulong</button> · <button class="logout-link" id="logoutBtn">Mag-logout</button></footer>
+
+<!-- KAHA AMOUNT MODAL -->
+<div class="modal-overlay" id="cashOverlay">
+  <div class="modal">
+    <h3 id="cashTitle">Kaha</h3>
+    <input type="number" id="cashAmt" placeholder="Halaga (₱)" inputmode="decimal" min="0" step="0.01">
+    <input type="text" id="cashNote" placeholder="Note (optional)">
+    <div class="item-prices" id="cashHint" style="margin:-4px 0 10px;"></div>
+    <div class="form-actions">
+      <button class="cancel-btn" id="cashCancel">Cancel</button>
+      <button class="save-btn" id="cashSave">I-save</button>
+    </div>
+  </div>
+</div>
 
 <!-- SALES POPUP (from Kita) -->
 <div class="modal-overlay" id="salesOverlay">
@@ -1195,6 +1254,7 @@ async function refreshAll(){
   render();
   loadReport();
   loadPeriods();
+  loadKaha();
 }
 
 /* ---------- KITA: today, this week, this month, this year (PH time) ---------- */
@@ -1209,6 +1269,98 @@ async function loadPeriods(){
     document.getElementById('benta' + k).textContent = 'Benta ' + peso(Number(r.revenue));
   });
 }
+
+/* ---------- KAHA: magkano ang dapat nasa kaha ---------- */
+let kahaAgo = 0, kahaTotalNow = 0;
+const KAHA_LABELS = { start:'Panimulang pera', expense:'Gastos', cash_in:'Dagdag na pera' };
+async function loadKaha(){
+  if(!storeCode) return;
+  const ago = kahaAgo;
+  const { data, error } = await sb.rpc('kaha_summary', { p_store_code: storeCode, p_days_ago: ago });
+  if(ago !== kahaAgo) return;
+  if(error){ console.error(error); document.getElementById('kahaRows').innerHTML = '<div class="report-note">Hindi ma-load ang kaha.</div>'; return; }
+  const k = (data && data[0]) || {};
+  const n = x => Number(x || 0);
+  const bentaCash = n(k.benta) - n(k.benta_utang);
+  kahaTotalNow = n(k.start_cash) + bentaCash + n(k.bayad_cash) + n(k.cash_in) - n(k.gastos);
+  document.getElementById('kahaTotal').textContent = pesoExact(kahaTotalNow);
+  const rows = [
+    ['Panimulang pera', '', n(k.start_cash), '+'],
+    ['Benta na cash', n(k.benta_utang) > 0 ? `Benta ${pesoExact(k.benta)} − inutang ${pesoExact(k.benta_utang)}` : '', bentaCash, '+'],
+    ['Bayad sa utang (cash)', '', n(k.bayad_cash), '+'],
+  ];
+  if(n(k.cash_in) > 0) rows.push(['Dagdag na pera', '', n(k.cash_in), '+']);
+  rows.push(['Gastos', '', n(k.gastos), '−']);
+  document.getElementById('kahaRows').innerHTML = rows.map(([l, s, v, sign]) =>
+    `<div class="krow"><span>${l}${s ? `<small>${s}</small>` : ''}</span><b class="${sign === '−' && v > 0 ? 'minus' : ''}">${sign}${pesoExact(v)}</b></div>`).join('');
+  const ew = [['GCash', k.bayad_gcash], ['Maya', k.bayad_maya], ['MariBank', k.bayad_maribank], ['Iba', k.bayad_other]].filter(([, v]) => n(v) > 0);
+  const ewBox = document.getElementById('kahaEwallet');
+  ewBox.style.display = ew.length ? 'block' : 'none';
+  ewBox.innerHTML = '📱 Bayad na hindi cash (wala sa kaha): ' + ew.map(([l, v]) => `<b>${l} ${pesoExact(v)}</b>`).join(' · ');
+  document.getElementById('kahaActions').style.display = ago === 0 ? 'grid' : 'none';
+  document.getElementById('kahaCount').value = '';
+  document.getElementById('kahaDiff').textContent = '';
+  // list of today's cash entries
+  const t0 = periodStartIso('day');
+  const start = new Date(new Date(t0).getTime() - ago * 86400e3).toISOString();
+  const end = new Date(new Date(start).getTime() + 86400e3).toISOString();
+  const res = await sb.from('cash_entries').select('*').eq('store_code', storeCode).gte('created_at', start).lt('created_at', end).order('created_at', { ascending:false });
+  if(ago !== kahaAgo) return;
+  const list = document.getElementById('kahaList');
+  list.innerHTML = (res.data || []).map(e =>
+    `<div class="kitem"><span>${phTime(e.created_at)} · ${KAHA_LABELS[e.kind] || e.kind}${e.note ? ' — ' + escapeHtml(e.note) : ''}${e.who ? ' (' + escapeHtml(e.who) + ')' : ''}</span>
+     <span><b style="color:${e.kind === 'expense' ? 'var(--red)' : 'var(--green)'}">${e.kind === 'expense' ? '−' : '+'}${pesoExact(e.amount)}</b>${ago === 0 ? ` <button type="button" data-id="${e.id}" aria-label="Burahin">✕</button>` : ''}</span></div>`).join('');
+  list.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', async ()=>{
+    if(!confirm('Burahin ang entry na ito?')) return;
+    const { error } = await sb.from('cash_entries').delete().eq('id', b.dataset.id);
+    if(error){ handleSaveError(error); return; }
+    loadKaha();
+  }));
+}
+document.querySelectorAll('.kaha-btn').forEach(b => b.addEventListener('click', ()=>{
+  kahaAgo = Number(b.dataset.ago);
+  document.querySelectorAll('.kaha-btn').forEach(x => x.classList.toggle('active', x === b));
+  loadKaha();
+}));
+document.getElementById('kahaCount').addEventListener('input', e=>{
+  const el = document.getElementById('kahaDiff');
+  const v = parseFloat(e.target.value);
+  if(isNaN(v)){ el.textContent = ''; return; }
+  const d = Math.round((v - kahaTotalNow) * 100) / 100;
+  if(Math.abs(d) < 0.01){ el.textContent = 'Sakto ✓'; el.style.color = 'var(--green)'; }
+  else if(d < 0){ el.textContent = 'Kulang ' + pesoExact(-d); el.style.color = 'var(--red)'; }
+  else { el.textContent = 'Sobra ' + pesoExact(d); el.style.color = '#B26F0E'; }
+});
+let cashKind = null;
+const CASH_TITLES = { start:'💵 Panimulang pera sa kaha', expense:'🧾 Gastos mula sa kaha', cash_in:'➕ Dagdag na pera sa kaha' };
+const CASH_HINTS = { start:'Pera sa kaha bago magbukas (hal. barya/sukli).', expense:'Hal. yelo, pamasahe, kuryente — kinuha sa kaha.', cash_in:'Perang idinagdag sa kaha na hindi galing sa benta.' };
+const CASH_NOTES = { start:'Note (optional)', expense:'Para saan? (hal. yelo, pamasahe)', cash_in:'Saan galing? (optional)' };
+document.querySelectorAll('.kaha-add').forEach(b => b.addEventListener('click', ()=>{
+  cashKind = b.dataset.kind;
+  document.getElementById('cashTitle').textContent = CASH_TITLES[cashKind];
+  document.getElementById('cashHint').textContent = CASH_HINTS[cashKind];
+  document.getElementById('cashAmt').value = '';
+  document.getElementById('cashNote').value = '';
+  document.getElementById('cashNote').placeholder = CASH_NOTES[cashKind];
+  document.getElementById('cashOverlay').classList.add('open');
+  setTimeout(()=> document.getElementById('cashAmt').focus(), 50);
+}));
+const closeCash = ()=> document.getElementById('cashOverlay').classList.remove('open');
+document.getElementById('cashCancel').addEventListener('click', closeCash);
+document.getElementById('cashOverlay').addEventListener('click', e=>{ if(e.target.id === 'cashOverlay') closeCash(); });
+document.getElementById('cashSave').addEventListener('click', async ()=>{
+  const btn = document.getElementById('cashSave');
+  const amount = Math.round(parseFloat(document.getElementById('cashAmt').value) * 100) / 100;
+  if(!amount || amount <= 0){ alert('Ilagay ang tamang halaga.'); return; }
+  btn.disabled = true;
+  const { error } = await sb.from('cash_entries').insert({
+    store_code: storeCode, kind: cashKind, amount, note: document.getElementById('cashNote').value.trim() || null, who: myName || null
+  });
+  btn.disabled = false;
+  if(error){ closeCash(); handleSaveError(error); return; }
+  closeCash();
+  loadKaha();
+});
 
 /* ---------- NABENTA popup: click a Kita box to see what was sold ---------- */
 let salesPeriod = 'day', salesView = 'time', salesRowsData = [];
@@ -1923,7 +2075,7 @@ document.getElementById('amtConfirm').addEventListener('click', async ()=>{
   btn.disabled = false;
   closeAmtModal();
   await refreshCustomerDetail();
-  if(deduct) refreshAll();
+  if(deduct) refreshAll(); else loadKaha();
 });
 
 // --- undo (reversal) ---
@@ -1940,6 +2092,7 @@ async function undoEntry(entryId){
   });
   if(error){ handleSaveError(error); return; }
   await refreshCustomerDetail();
+  loadKaha();
 }
 
 // --- show store QR to the customer ---
