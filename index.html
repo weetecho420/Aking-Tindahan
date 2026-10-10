@@ -1,9 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aking Tindahan — Store Tracker</title>
+<title>Aking Tindahan — Benta, kita, utang at stock ng sari-sari store</title>
+<meta name="description" content="Ang notebook ng tindahan mo, nasa cellphone na. Itala ang benta, kita, utang at stock ng sari-sari store. 30 araw libre, walang card.">
+<meta name="theme-color" content="#1F6E43">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tindahan">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Aking Tindahan — Ang notebook ng tindahan mo, nasa cellphone na">
+<meta property="og:description" content="Benta, kita, utang at stock ng sari-sari store sa isang app. 30 araw libre, tapos ₱185/buwan.">
+<meta property="og:image" content="https://aking-tindahan-dixx.vercel.app/og-image.png">
+<meta property="og:url" content="https://aking-tindahan-dixx.vercel.app/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -85,7 +97,41 @@
 
   footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:24px;opacity:0.7;}
 
-  #gateOverlay{position:fixed;inset:0;background:var(--paper);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
+  #gateOverlay{position:fixed;inset:0;background:var(--paper);z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .land{max-width:460px;margin:0 auto;padding:0 16px 30px;}
+  .land-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 0 6px;}
+  .land-brand{display:flex;align-items:center;gap:10px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:22px;color:var(--green);}
+  .land-top .help-open{background:none;border:1px solid var(--border);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .land-hero{text-align:center;padding:14px 4px 16px;}
+  .land-hero h1{font-family:'Baloo 2',sans-serif;font-size:31px;line-height:1.08;margin:0;color:var(--ink);}
+  .land-hero h1 span{color:var(--green);}
+  .land-hero p{color:var(--ink-soft);font-size:14px;margin:10px 0 0;line-height:1.45;}
+  .land-badges{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:12px;}
+  .land-badges span{background:var(--green-light);color:var(--green);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;}
+  #gateOverlay .gate-card{margin:0 auto;box-shadow:0 6px 24px rgba(36,27,18,0.08);}
+  .land-sec{margin-top:30px;}
+  .land-sec h2{font-family:'Baloo 2',sans-serif;font-size:23px;margin:0 0 10px;text-align:center;}
+  .feat{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px;}
+  .feat img{width:120px;height:170px;object-fit:cover;object-position:top;border-radius:10px;border:1px solid var(--border);display:block;background:var(--paper);}
+  .feat h3{font-family:'Baloo 2',sans-serif;font-size:18px;margin:0 0 4px;line-height:1.1;}
+  .feat p{margin:0;font-size:13px;color:var(--ink-soft);line-height:1.45;}
+  .price-card{background:var(--card);border:2px solid var(--green);border-radius:16px;padding:18px;text-align:center;}
+  .price-card .big{font-family:'Baloo 2',sans-serif;font-size:40px;font-weight:800;color:var(--green);line-height:1;}
+  .price-card .big small{font-size:16px;color:var(--ink-soft);font-weight:600;}
+  .price-card ul{list-style:none;padding:0;margin:12px 0 0;text-align:left;font-size:13px;line-height:1.9;}
+  .about-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;font-size:14px;line-height:1.55;color:var(--ink);}
+  .about-card .sig{margin-top:10px;font-weight:700;color:var(--green);}
+  .land-faq details{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;padding:0 14px;}
+  .land-faq summary{cursor:pointer;font-weight:700;font-size:14px;padding:12px 0;list-style:none;}
+  .land-faq summary::-webkit-details-marker{display:none;}
+  .land-faq summary::after{content:'+';float:right;color:var(--green);font-weight:800;}
+  .land-faq details[open] summary::after{content:'−';}
+  .land-faq details p{margin:0 0 12px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
+  .land-cta{display:block;width:100%;margin-top:14px;padding:13px;border:none;border-radius:10px;background:var(--green);color:#fff;font-weight:800;font-size:16px;}
+  .land-foot{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:30px;line-height:1.8;}
+  .land-foot a{color:var(--ink-soft);}
+  .app-legal{text-align:center;font-size:11px;margin-top:4px;}
+  .app-legal a{color:var(--ink-soft);}
   .gate-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:340px;width:100%;text-align:center;}
   .gate-card h2{font-family:'Baloo 2',sans-serif;margin-top:0;}
   .gate-card input{width:100%;padding:11px;border-radius:8px;border:1px solid var(--border);font-size:15px;margin-bottom:10px;}
@@ -264,7 +310,17 @@
 
 <!-- LOGIN / SIGN-UP GATE -->
 <div id="gateOverlay">
-  <div class="gate-card">
+ <div class="land">
+  <div class="land-top">
+    <div class="land-brand"><svg width="36" height="36" viewBox="0 0 520 520" aria-hidden="true"><rect width="520" height="520" rx="120" fill="#1F6E43"/><path d="M260 64 L452 440 L360 440 L332 384 L188 384 L160 440 L68 440 Z" fill="#FBF6EC"/><path d="M260 184 L304 274 L216 274 Z" fill="#1F6E43"/><rect x="146" y="296" width="228" height="44" fill="#F2A93B"/><rect x="184" y="296" width="38" height="44" fill="#FBF6EC"/><rect x="260" y="296" width="38" height="44" fill="#FBF6EC"/><rect x="336" y="296" width="38" height="44" fill="#FBF6EC"/></svg>Aking Tindahan</div>
+    <button class="help-open" type="button">❓ Tulong</button>
+  </div>
+  <div class="land-hero">
+    <h1>Ang notebook ng tindahan mo, <span>nasa cellphone na.</span></h1>
+    <p>Itala ang benta, kita, utang at stock ng sari-sari store mo, kahit nasaan ka.</p>
+    <div class="land-badges"><span>30 araw libre</span><span>Walang card</span><span>Walang download</span></div>
+  </div>
+  <div class="gate-card" id="gateCard">
     <div class="gate-tabs" id="gateTabs" role="tablist">
       <button type="button" role="tab" class="gate-tab active" id="tabSignup" aria-selected="true">Mag-sign up — Libre</button>
       <button type="button" role="tab" class="gate-tab" id="tabLogin" aria-selected="false">Mag-login</button>
@@ -276,7 +332,7 @@
       <input type="text" id="gateStoreCode" placeholder="Store code (hal. ALINGNENA482)" autocapitalize="characters">
       <div class="gate-hint">Ang code na ibinigay noong nag-sign up ka.</div>
       <input type="password" id="gatePin" placeholder="PIN" inputmode="numeric" autocomplete="off">
-      <input type="text" id="gateName" placeholder="Pangalan mo (hal. Henry)">
+      <input type="text" id="gateName" placeholder="Pangalan mo (hal. Nena)">
       <div class="gate-error" id="gateError"></div>
       <button id="gateEnter">Mag-login</button>
     </div>
@@ -302,7 +358,57 @@
       <button id="doneGo">Simulan na</button>
     </div>
     <button class="gate-link help-open" type="button">❓ May problema? <b>Tulong</b></button>
+    <div class="gate-hint" style="text-align:center;margin:8px 0 0;">Sa pag-sign up, sumasang-ayon ka sa <a href="/terms.html" target="_blank">Terms</a> at <a href="/privacy.html" target="_blank">Privacy Policy</a>.</div>
   </div>
+
+  <div class="land-sec">
+    <h2>Ano ang kaya nito?</h2>
+    <div class="feat"><img src="/shot-kita.jpg" alt="Kita ngayong araw, linggo, buwan at taon" loading="lazy" width="120" height="170"><div><h3>💰 Kita mo, alam mo agad</h3><p>Isang tap sa bawat benta. Kita agad ang benta at tubo ngayong araw, linggo, buwan at taon.</p></div></div>
+    <div class="feat"><img src="/shot-utang.jpg" alt="Listahan ng utang ng customer" loading="lazy" width="120" height="170"><div><h3>📒 Utang na malinaw</h3><p>Kita kung sino ang may utang, ano ang inutang, magkano at kailan. May paalala sa text at QR para sa bayad.</p></div></div>
+    <div class="feat"><img src="/shot-restock.jpg" alt="Listahan ng kailangang i-restock" loading="lazy" width="120" height="170"><div><h3>🛒 Alam ang bibilhin</h3><p>Kita agad ang ubos at paubos na. Isang tap, kopyado ang listahan para sa palengke o supplier.</p></div></div>
+    <div class="feat"><img src="/shot-nabenta.jpg" alt="Listahan ng nabenta bawat oras" loading="lazy" width="120" height="170"><div><h3>👨‍👩‍👧 Pang-buong pamilya</h3><p>Isang tindahan, pwedeng gamitin ng asawa, anak o tindera. Kita kung sino ang nagbenta at anong oras.</p></div></div>
+  </div>
+
+  <div class="land-sec">
+    <h2>Presyo</h2>
+    <div class="price-card">
+      <div style="font-weight:700;color:var(--ink-soft);font-size:13px;">Unang 30 araw: <b style="color:var(--green)">LIBRE</b></div>
+      <div class="big" style="margin-top:8px;">₱185 <small>/ buwan</small></div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">o ₱1,850 / taon (2 buwang libre)</div>
+      <ul>
+        <li>✅ Walang card na kailangan sa pag-sign up</li>
+        <li>✅ Walang awtomatikong singil. Ikaw ang magbabayad kung gusto mong ituloy.</li>
+        <li>✅ Magbayad gamit ang GCash, QR Ph o card</li>
+        <li>✅ Makikita mo pa rin ang data mo kahit hindi ka na nagbayad</li>
+      </ul>
+      <button type="button" class="land-cta" id="landCta">Subukan nang libre</button>
+    </div>
+  </div>
+
+  <div class="land-sec">
+    <h2>Sino ang gumawa?</h2>
+    <div class="about-card">
+      Ako si Henry. May sari-sari store kami sa Bukidnon. Noon, notebook ang gamit namin sa benta at utang, at madalas hindi namin alam kung magkano talaga ang kita. Kaya ginawa ko ang Aking Tindahan para sa sarili naming tindahan, at ngayon gusto ko itong ibahagi sa ibang may tindahan.
+      <div class="sig">— Henry, gumawa ng Aking Tindahan</div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">Produkto ng XeraDC · May tanong? I-message ang Facebook Page na <b>Aking Tindahan</b>.</div>
+    </div>
+  </div>
+
+  <div class="land-sec land-faq">
+    <h2>Mga tanong</h2>
+    <details><summary>Ligtas ba ang data ko?</summary><p>Oo. Ang data ng tindahan mo ay makikita lang ng may store code at PIN. Hindi namin ibinebenta o ibinabahagi ang data mo. Basahin ang <a href="/privacy.html" target="_blank">Privacy Policy</a>.</p></details>
+    <details><summary>Kailangan bang i-download?</summary><p>Hindi. Buksan lang ang link sa cellphone. Pwede mo rin itong idagdag sa home screen para parang app: sa Chrome, ⋮ → "Add to Home screen"; sa iPhone Safari, Share → "Add to Home Screen".</p></details>
+    <details><summary>Kailangan ba ng internet?</summary><p>Oo, kailangan ng internet (data o WiFi) para ma-save ang benta. Kahit mahina ang signal, gumagana ito.</p></details>
+    <details><summary>Pwede ba sa asawa o tindera ko?</summary><p>Oo. Ibigay lang sa kanila ang store code at PIN. Pareho kayong makakakita at makakapagtala, at makikita kung sino ang nagbenta.</p></details>
+    <details><summary>Paano kung ayaw ko nang ituloy?</summary><p>Walang awtomatikong singil, kaya huwag lang magbayad. Kung gusto mong ipabura ang data mo, i-message lang kami.</p></details>
+    <details><summary>Paano magbayad?</summary><p>Pagkatapos ng 30 araw, may lalabas na button sa app para magbayad gamit ang GCash, QR Ph o card, sa pamamagitan ng PayMongo.</p></details>
+  </div>
+
+  <div class="land-foot">
+    <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms</a><br>
+    © 2026 Aking Tindahan · XeraDC
+  </div>
+ </div>
 </div>
 
 <header>
@@ -451,7 +557,7 @@
     <div class="qr-card">
       <div id="qrEmpty" class="item-prices">I-upload ang GCash o MariBank QR mo. Ipapakita ito sa customer kapag magbabayad sila ng utang — diretso sa iyo ang pera.</div>
       <img id="qrPreview" alt="QR" style="display:none;">
-      <input type="text" id="qrLabel" placeholder="Label (e.g. GCash · Henry B. · 0917...)" maxlength="80">
+      <input type="text" id="qrLabel" placeholder="Label (hal. GCash · Nena D. · 0917...)" maxlength="80">
       <input type="file" id="qrFile" accept="image/png,image/jpeg,image/webp" style="display:none;">
       <div class="form-actions">
         <button class="cancel-btn" id="qrRemove" style="display:none;">Tanggalin</button>
@@ -601,7 +707,7 @@
   </div>
 </div>
 
-<footer><span id="footerText">Shared ang datos sa lahat ng naka-login sa tindahan mo.</span><br><button class="logout-link help-open" type="button">❓ Tulong</button> · <button class="logout-link" id="logoutBtn">Mag-logout</button></footer>
+<footer><span id="footerText">Shared ang datos sa lahat ng naka-login sa tindahan mo.</span><br><button class="logout-link help-open" type="button">❓ Tulong</button> · <button class="logout-link" id="logoutBtn">Mag-logout</button><div class="app-legal"><a href="/privacy.html" target="_blank">Privacy</a> · <a href="/terms.html" target="_blank">Terms</a> · © 2026 XeraDC</div></footer>
 
 <!-- SALES POPUP (from Kita) -->
 <div class="modal-overlay" id="salesOverlay">
@@ -741,7 +847,7 @@ function formatTimeAgo(iso){
    never saved on the phone — only the login session is.
    ============================================================ */
 function showGate(message){
-  document.getElementById('gateOverlay').style.display = 'flex';
+  document.getElementById('gateOverlay').style.display = 'block';
   // New visitors see Sign Up first; people who already used the app see Login
   let returning = !!(storeCode || myName);
   try{ returning = returning || localStorage.getItem('tindahan-has-account') === '1'; }catch(e){}
@@ -947,6 +1053,11 @@ function showGateMode(mode){
   });
 }
 document.getElementById('tabSignup').addEventListener('click', ()=> showGateMode('signup'));
+document.getElementById('landCta').addEventListener('click', ()=>{
+  showGateMode('signup');
+  document.getElementById('gateCard').scrollIntoView({ behavior:'smooth', block:'center' });
+  setTimeout(()=> document.getElementById('suStoreName').focus(), 400);
+});
 document.getElementById('tabLogin').addEventListener('click', ()=> showGateMode('login'));
 
 // The store code is made automatically from the store name, e.g. "Aling Nena Store" -> ALINGNENA482
